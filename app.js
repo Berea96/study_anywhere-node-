@@ -35,8 +35,6 @@ var usersRouter = require('./routes/users');
 
 var db_room = require('./models/db_room');
 
-
-
 app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
@@ -56,12 +54,11 @@ app.use('/users', usersRouter);
 
 
 
-
 var userrooms = [];
 
 io.sockets.on('connect', function(socket){
-	//var roomId = "";
-	
+	var roomId = "";
+
 /*	var userroom = {
 			userid: string,
 			roomname: string,
@@ -69,55 +66,71 @@ io.sockets.on('connect', function(socket){
 			roommaxp: int,
 			roomcurp: int
 	}*/
-	
-	
-	
+
+
+
 	socket.on('join', function(data){
 		console.log('data at join : '+data);
+
+		roomId = data;
+		socket.join(data);
 		
+
 		for(var item in userrooms){
-			
+
 			if(userrooms[item].roomname == data){
 				if(userrooms[item].roomcurp >=10){
+					console.log("if");
 					return;
 				}else{
 					userrooms[item].roomcurp += 1;
 					console.log(userrooms[item].roomcurp);
-					
+
 					socket.join(data);
 					roomId = data;
+
+					io.sockets.in(roomId).emit('getImage', "");
+					socket.on('getImage', (data) => {
+						console.log('image save..........')
+						io.sockets.in(roomId).emit('setImage', data);
+					});
 				}
 			}
+			else{
+				console.log("else")
+			}
 		}
-		
+
 	});
-	
+
 	socket.on('draw', function(data){
 		io.sockets.in(roomId).emit('line', data);
 	});
-	
+
+	socket.on('clearAll', (data) => {
+		io.sockets.in(roomId).emit('clearAll', data);
+	});
+
 	socket.on('onCreateRoom', function(data){
 		console.log('on server onCreateRoom')
-		
-		
-		
+
 		var roomexist = false;
 /*		for(var item in userrooms){
 			if(data.roomname == userrooms[item].roomname){
 				roomexist = true;
 			}
 		}*/
-		
+
 		db_room.existCheck(data.roomname, function(row){
 			roomexist = row;
 		})
-		
+
 		if(!roomexist){
 			socket.leave(socket.room);
 			//socket.join(data.roomname);
 			socket.room = data.roomname;
 			data.rcode = 0;
-			
+
 			var room = {
 					userid: data.userid,
 					roomname: data.roomname,
@@ -125,15 +138,15 @@ io.sockets.on('connect', function(socket){
 					roommaxp: data.roommaxp,
 					roomcurp: 0
 				};
-			
+
 			db_room.createRoom(room, function(row){
 				console.log(row);
 			});
-			
+
 		}else{
 			data.rcode = 1;
 		}
-		
+
 		if(data.rcode == 0){
 			console.log(data);
 		socket.emit('onCreateRoom', data)
@@ -141,8 +154,8 @@ io.sockets.on('connect', function(socket){
 			console.log('기존 방있음');
 		}
 	});
-	
-	
+
+
 })
 
 

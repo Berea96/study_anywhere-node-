@@ -27,30 +27,30 @@ router.use(session({
 
 router.post('/identify', function(req, res){
 	var javahash = (req.body.mem_Hash).toString();
-	
-	sess = req,session;
+
+	sess = req.session;
 	sess.mem_ID = req.body.mem_ID;
 	sess.mem_Hash = javahash;
 
-	
+
 	db_member.hash(req.body.mem_ID, function(data){
-		
+
 		var id = data.member_pw;
 		var email = data.member_email;
 		var toenc = (id+email).toString();
-		
+
 		var nodehash = crypto.createHash('sha256').update(toenc).digest("hex");
-		
+
 		if(nodehash == sess.mem_Hash){
 			res.redirect('/');
-			
+
 		}else {
 			res.writeHead(200, {'Content-Type':'text/html; charset=utf-8'});
 			res.end('<script>alert("인증도중 오류가 발생하였습니다."); window.location="http://localhost/Study_Anywhere/";</script>')
 		}
-		
+
 	});
-	
+
 });
 
 
@@ -72,17 +72,17 @@ router.get('/room', function(req,res){
 		userrooms = row;
 		res.send(userrooms);
 	});
-	
+
 });
 
 router.post('/roomCheck', function(req,res){
 	var rname = req.body.rname;
 	var rpass = req.body.rpass;
-	
+
 	db_room.roomCheck(rname, function(row){
 		if(row == rpass){
 			console.log('비번 맞음')
-			fs.readFile('./canvas.html', 'utf-8', function(err, data){
+			fs.readFile('routes/canvas.html', 'utf-8', function(err, data){
 				res.send(ejs.render(data,{
 					room: rname
 				}));
@@ -95,7 +95,7 @@ router.post('/roomCheck', function(req,res){
 });
 
 router.post('/canvas/:name', function(req,res){
-	
+
 });
 
 
