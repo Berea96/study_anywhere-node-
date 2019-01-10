@@ -1,234 +1,233 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <title><%= title %></title>
-    <link rel='stylesheet' href='/stylesheets/style.css' />
-    <script type="text/javascript" src="//code.jquery.com/jquery-1.12.4.js"></script>
-	<script type="text/javascript" src="/socket.io/socket.io.js"></script>
+<head>
+  <title><%= title %></title>
+  <link rel='stylesheet' href='/stylesheets/style.css' />
+  <script type="text/javascript" src="//code.jquery.com/jquery-1.12.4.js"></script>
+  <script type="text/javascript" src="/socket.io/socket.io.js"></script>
 
-<!-- 합쳐지고 최소화된 최신 CSS -->
-<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/css/bootstrap.min.css">
-<!-- 부가적인 테마 -->
-<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/css/bootstrap-theme.min.css">
-<!-- 합쳐지고 최소화된 최신 자바스크립트 -->
-<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/js/bootstrap.min.js"></script>
+  <!-- 합쳐지고 최소화된 최신 CSS -->
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/css/bootstrap.min.css">
+  <!-- 부가적인 테마 -->
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/css/bootstrap-theme.min.css">
+  <!-- 합쳐지고 최소화된 최신 자바스크립트 -->
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/js/bootstrap.min.js"></script>
 
-		<script type="text/javascript">
-            var userid = "<%= sess.mem_ID %>";
-            var userrooms = [];
+  <script type="text/javascript">
+  var userid = "<%= sess.mem_ID %>";
+  var userrooms = [];
 
-		$(document).ready(function(){
-            // 방목록 출력
-            refresh();
+  $(document).ready(function(){
+    // 방목록 출력
+    refresh();
 
-			var socket = io.connect();
-            //방생성시 목록 추가
-			socket.on('onCreateRoom', function (data){
+    var socket = io.connect();
+    //방생성시 목록 추가
+    socket.on('onCreateRoom', function (data){
 
- 				$('<button></button>').attr({
-					'id': data.roomname,
-                    'data-toggle': "modal",
-                    'data-target': "#enterRoom"
-				}).text('방이름: '+ data.roomname +' 방장: '+                     data.roomname).appendTo('#container');
+      $('<button></button>').attr({
+        'id': data.roomname,
+        'data-toggle': "modal",
+        'data-target': "#enterRoom"
+      }).text('방이름: '+ data.roomname +' 방장: '+                     data.roomname).appendTo('#container');
 
-			});
+    });
 
 
-			//모달 연결
-			$('#container').on('click','button', function(){
-				var roomname = $(this).attr('id');
+    //모달 연결
+    $('#container').on('click','button', function(){
+      var roomname = $(this).attr('id');
 
-                $(roomname2).val(roomname);
+      $(roomname2).val(roomname);
 
-			});
+    });
 
-            //방 생성
-			$('#createRoom').click(function(){
-				var roomName = $('#roomName').val();
-				var roomPass = $('#roomPass').val();
+    //방 생성
+    $('#createRoom').click(function(){
+      var roomName = $('#roomName').val();
+      var roomPass = $('#roomPass').val();
 
-                    if(roomPass == '' || roomName == ''){
-                        alert('공백입력 불가!');
-                        return;
-                    }else {
-                        $.ajax({
-                            type: 'GET',
-                            url: "/lobby/existCheck",
-                            data: { "roomname": roomName },
-                            success: function(result){
-                                var out = JSON.parse(result);
-                                if(out.result == 'yes'){
+      if(roomPass == '' || roomName == ''){
+        alert('공백입력 불가!');
+        return;
+      }else {
+        $.ajax({
+          type: 'GET',
+          url: "/lobby/existCheck",
+          data: { "roomname": roomName },
+          success: function(result){
+            var out = JSON.parse(result);
+            if(out.result == 'yes'){
 
-                                    var userroom = {
-                                            userid: userid,
-                                            roomname: roomName,
-                                            roompass: roomPass,
-                                    };
+              var userroom = {
+                userid: userid,
+                roomname: roomName,
+                roompass: roomPass,
+              };
 
-                                    socket.emit('onCreateRoom', userroom);
+              socket.emit('onCreateRoom', userroom);
 
-                                }else{
+            }else{
 
-                                    alert('동일한 이름의 방이 있습니다!');
-                                    return;
+              alert('동일한 이름의 방이 있습니다!');
+              return;
 
-                                }
-                            }
-                        })
-				    }
-
-			});
-
-            //새로고침 버튼
-			$('#refresh').click(function(){
-
-				$('#container').empty();
-
-                refresh();
-
-			});
-
-            //새로고침 메소드
-/*            function refresh(){
-                $.getJSON('/lobby/roomList', function(data){
-				userrooms = data;
-				$.each(data, function(index, item){
-					$('<button></button>').attr({
-						'id': item.roomname,
-                        'data-toggle': "modal",
-                        'data-target': "#enterRoom"
-					}).text('방이름: '+ item.roomname +' 방장: '+                     userid).appendTo('#container');
-				    });
-			    });
-            }*/
-
-             function refresh(){
-                $.getJSON('/lobby/roomList/1', function(data){
-				userrooms = data.userrooms;
-				$.each(userrooms, function(index, item){
-					$('<button></button>').attr({
-						'id': item.roomname,
-                        'data-toggle': "modal",
-                        'data-target': "#enterRoom"
-					}).text('방이름: '+ item.roomname +' 방장: '+                     item.userid).appendTo('#container');
-				    });
-			    });
             }
+          }
+        })
+      }
 
-		});
+    });
 
+    //새로고침 버튼
+    $('#refresh').click(function(){
+
+      $('#container').empty();
+
+      refresh();
+
+    });
+
+    //새로고침 메소드
+    /*            function refresh(){
+    $.getJSON('/lobby/roomList', function(data){
+    userrooms = data;
+    $.each(data, function(index, item){
+    $('<button></button>').attr({
+    'id': item.roomname,
+    'data-toggle': "modal",
+    'data-target': "#enterRoom"
+  }).text('방이름: '+ item.roomname +' 방장: '+                     userid).appendTo('#container');
+});
+});
+}*/
+
+function refresh(){
+  $.getJSON('/lobby/roomList/', function(data){
+    userrooms = data.userrooms;
+    $.each(userrooms, function(index, item){
+      $('<button></button>').attr({
+        'id': item.roomname,
+        'data-toggle': "modal",
+        'data-target': "#enterRoom"
+      }).text('방이름: '+ item.roomname +' 방장: '+ item.userid).appendTo('#container');
+    });
+  });
+}
+
+});
 
 //================================================================================
 
-    var pageNum ;
-    var size = 10;  // 한 페이지에 보여줄 개수
-    var cnt = userrooms.length;  // 전체 글의 개수
-    var totalPage = Math.ceil(cnt / size);  // 전체 페이지의 수
-    var pageSize = 10; // 페이지 링크의 개수
+var pageNum ;
+var size = 10;  // 한 페이지에 보여줄 개수
+var cnt = userrooms.length;  // 전체 글의 개수
+var totalPage = Math.ceil(cnt / size);  // 전체 페이지의 수
+var pageSize = 10; // 페이지 링크의 개수
 
-    var startPage = (pageNum-1) * size+1;
-    var endPage = pageNum * size;
-    if(endPage > totalPage) {
-        endPage = totalPage;
-    }
+var startPage = (pageNum-1) * size+1;
+var endPage = pageNum * size;
+if(endPage > totalPage) {
+  endPage = totalPage;
+}
 
 
 //================================================================================
 
 </script>
 
- </head>
+</head>
 
 <!--================================================================================-->
 
-  <body>
+<body>
 
-    <h1><%= title %></h1>
-    <p>Welcome to <%= title %></p>
+  <h1><%= title %></h1>
+  <p>Welcome to <%= title %></p>
 
-    <p><%= sess.mem_ID %></p>
-    <p><%= sess.mem_Hash %></p>
+  <p><%= sess.mem_ID %></p>
+  <p><%= sess.mem_Hash %></p>
 
-    <a href="http://localhost/Study_Anywhere/myPage.jsp">마이페이지</a>  <br />
+  <a href="http://localhost/Study_Anywhere/myPage.jsp">마이페이지</a>  <br />
 
-    <hr><br><br>
+  <hr><br><br>
 
-    <div>
+  <div>
     <span>Room Name: </span>
-	<input id="roomName">
-	<span>Room Password: </span>
-	<input type="password" id="roomPass">
+    <input id="roomName">
+    <span>Room Password: </span>
+    <input type="password" id="roomPass">
 
-	<button id="createRoom">Create Room</button>
-	<button id="refresh">Refresh</button>
+    <button id="createRoom">Create Room</button>
+    <button id="refresh">Refresh</button>
 
-	<hr>
+    <hr>
 
-	<div id="container"></div>
+    <div id="container"></div>
+  </div>
+
+  <!--================================================================================-->
+  <div class="modal" id="enterRoom">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h4 class="modal-title">비밀번호를 입력해주세요</h4>
+          <button type="button" class="close" data-dismiss="modal">&times;</button>
+        </div>
+
+        <form action="/lobby/roomCheck" method="POST">
+          <div class="form-group">
+            <div class="modal-body">
+              <h5>
+                <label>방이름</label>
+              </h5>
+              <input class="form-control" name="rname" type="text" id="roomname2" readonly />
+              <h5>
+                <label>비밀번호</label>
+              </h5>
+              <input class="form-control" name="rpass" type="password"
+              id="pwd" />
+            </div>
+            <div class="modal-footer">
+              <button class="btn btn-dark" type="submit">들어가기</button>
+            </div>
+          </div>
+        </form>
+      </div>
     </div>
+  </div>
+  <!--================================================================================-->
+  <!--        <div class="modal" id="createmodal">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h4 class="modal-title">새로운 방을 개설합니다!</h4>
+          <button type="button" class="close" data-dismiss="modal">&times;</button>
+        </div>
 
-    <!--================================================================================-->
-    <div class="modal" id="enterRoom">
-		<div class="modal-dialog">
-			<div class="modal-content">
-				<div class="modal-header">
-					<h4 class="modal-title">비밀번호를 입력해주세요</h4>
-					<button type="button" class="close" data-dismiss="modal">&times;</button>
-				</div>
+        <form action="/lobby/roomCheck" method="POST">
+          <div class="form-group">
+            <div class="modal-body">
+              <h5>
+                <label>방이름</label>
+              </h5>
+              <input class="form-control" name="rname" type="text" id="roomname2" />
+              <h5>
+                <label>비밀번호</label>
+              </h5>
+              <input class="form-control" name="rpass" type="password"
+              id="pwd" />
+            </div>
+            <div class="modal-footer">
+              <span id="existCheck" ></span>
+              <button class="btn btn-dark" >방만들기</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>-->
+  <!--================================================================================-->
 
-				<form action="/lobby/roomCheck" method="POST">
-					<div class="form-group">
-						<div class="modal-body">
-							<h5>
-								<label>방이름</label>
-							</h5>
-							<input class="form-control" name="rname" type="text" id="roomname2" readonly />
-							<h5>
-								<label>비밀번호</label>
-							</h5>
-							<input class="form-control" name="rpass" type="password"
-								id="pwd" />
-						</div>
-						<div class="modal-footer">
-							<button class="btn btn-dark" type="submit">들어가기</button>
-						</div>
-					</div>
-				</form>
-			</div>
-		</div>
-	</div>
-    <!--================================================================================-->
-<!--        <div class="modal" id="createmodal">
-		<div class="modal-dialog">
-			<div class="modal-content">
-				<div class="modal-header">
-					<h4 class="modal-title">새로운 방을 개설합니다!</h4>
-					<button type="button" class="close" data-dismiss="modal">&times;</button>
-				</div>
-
-				<form action="/lobby/roomCheck" method="POST">
-					<div class="form-group">
-						<div class="modal-body">
-							<h5>
-								<label>방이름</label>
-							</h5>
-							<input class="form-control" name="rname" type="text" id="roomname2" />
-							<h5>
-								<label>비밀번호</label>
-							</h5>
-							<input class="form-control" name="rpass" type="password"
-								id="pwd" />
-						</div>
-						<div class="modal-footer">
-                            <span id="existCheck" ></span>
-							<button class="btn btn-dark" >방만들기</button>
-						</div>
-					</div>
-				</form>
-			</div>
-		</div>
-	</div>-->
-    <!--================================================================================-->
-
-  </body>
+</body>
 </html>
