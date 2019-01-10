@@ -67,35 +67,46 @@ io.sockets.on('connect', function(socket){
 
 		db_room.getList(data, function(row){
 			userrooms = row;
+			var result = 0;
 
-			for(var item in userrooms){
-				if(userrooms[item].roomname == data){
-
-					roomId = data;
-					socket.leave(socket.room);
-					socket.join(data);
-					socket.room = data;
-
-
-							var destination = 'http://localhost:3000/room';
-							var redirect ={
-									"bool": true,
-									"destination": destination
-							}
-							socket.emit('redirect', redirect);
-
-				}else{
-					console.log('오류발생 ');
-
-					var destination = 'http://localhost:3000/';
-					var redirect ={
-							"bool": false,
-							"destination": destination
+			function wheretogo(){
+				for(var item in userrooms){
+					if(userrooms[item].roomname == data){
+						result+=1;
 					}
-					socket.emit('redirect', redirect);
-
 				}
 			}
+
+			if(result != 1){
+
+				roomId = data;
+				socket.leave(socket.room);
+				socket.join(data);
+				socket.room = data;
+
+
+				var destination = 'http://localhost:3000/room';
+				var redirect ={
+					"bool": true,
+					"method": "POST",
+					"destination": destination
+				}
+				socket.emit('redirect', redirect);
+
+			}else{
+
+				console.log('오류발생 ');
+
+				var destination = 'http://localhost:3000';
+				var redirect ={
+						"bool": false,
+						"method": "GET",
+						"destination": destination
+				}
+				socket.emit('redirect', redirect);
+
+			}
+
 		});
 
 	});
@@ -118,38 +129,35 @@ io.sockets.on('connect', function(socket){
 			}
 		}*/
 
-		db_room.existCheck(data.roomname, function(row){
-			roomexist = row;
+		db_room.existCheck(data.roomname, function(result){
+			roomexist = result;
+
+			if(!roomexist){
+				socket.leave(socket.room);
+				//socket.join(data.roomname);
+				socket.room = data.roomname;
+				data.rcode = 0;
+
+				var room = {
+						userid: data.userid,
+						roomname: data.roomname,
+						roompass: data.roompass,
+					};
+
+				db_room.createRoom(room, function(row){
+					console.log(row);
+				});
+
+			}else{
+				data.rcode = 1;
+			}
+
+			if(data.rcode == 0){
+			socket.emit('onCreateRoom', data)
+			}else{
+				console.log('기존 방있음');
+			}
 		})
-
-		if(!roomexist){
-			socket.leave(socket.room);
-			//socket.join(data.roomname);
-			socket.room = data.roomname;
-			data.rcode = 0;
-
-			var room = {
-					userid: data.userid,
-					roomname: data.roomname,
-					roompass: data.roompass,
-					roommaxp: data.roommaxp,
-					roomcurp: 0
-				};
-
-			db_room.createRoom(room, function(row){
-				console.log(row);
-			});
-
-		}else{
-			data.rcode = 1;
-		}
-
-		if(data.rcode == 0){
-			console.log(data);
-		socket.emit('onCreateRoom', data)
-		}else{
-			console.log('기존 방있음');
-		}
 	});
 
 
