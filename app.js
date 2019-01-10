@@ -29,9 +29,10 @@ server.listen(port, function(){
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
 
-//라우트 추가
+//라우터 추가
 var indexRouter = require('./routes/index');
-var usersRouter = require('./routes/users');
+var lobbyRouter = require('./routes/lobby');
+var roomRouter = require('./routes/room');
 
 var db_room = require('./models/db_room');
 
@@ -42,17 +43,10 @@ app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/', indexRouter);
-app.use('/users', usersRouter);
+app.use('/lobby', lobbyRouter);
+app.use('/room', roomRouter)
 
 //========================================================================================
-
-
-
-
-
-
-
-
 
 var userrooms = [];
 
@@ -68,38 +62,41 @@ io.sockets.on('connect', function(socket){
 	}*/
 
 
-
 	socket.on('join', function(data){
 		console.log('data at join : '+data);
 
-		roomId = data;
-		socket.join(data);
-		
+		db_room.getList(data, function(row){
+			userrooms = row;
 
-		for(var item in userrooms){
+			for(var item in userrooms){
+				if(userrooms[item].roomname == data){
 
-			if(userrooms[item].roomname == data){
-				if(userrooms[item].roomcurp >=10){
-					console.log("if");
-					return;
-				}else{
-					userrooms[item].roomcurp += 1;
-					console.log(userrooms[item].roomcurp);
-
-					socket.join(data);
 					roomId = data;
+					socket.leave(socket.room);
+					socket.join(data);
+					socket.room = data;
 
-					io.sockets.in(roomId).emit('getImage', "");
-					socket.on('getImage', (data) => {
-						console.log('image save..........')
-						io.sockets.in(roomId).emit('setImage', data);
-					});
+
+							var destination = 'http://localhost:3000/room';
+							var redirect ={
+									"bool": true,
+									"destination": destination
+							}
+							socket.emit('redirect', redirect);
+
+				}else{
+					console.log('오류발생 ');
+
+					var destination = 'http://localhost:3000/';
+					var redirect ={
+							"bool": false,
+							"destination": destination
+					}
+					socket.emit('redirect', redirect);
+
 				}
 			}
-			else{
-				console.log("else")
-			}
-		}
+		});
 
 	});
 
@@ -153,6 +150,24 @@ io.sockets.on('connect', function(socket){
 		}else{
 			console.log('기존 방있음');
 		}
+	});
+
+
+	socket.on('disconnect', function(){
+		//delete usernames[socket.username];
+		//var userlist = new Array();
+		/*for (var name in usernames) {
+			userlist.push(usernames[name]);
+		}
+		io.sockets.emit('updateuser', userlist);
+		socket.broadcast.emit('servernoti', 'red', socket.username + ' has disconnected');
+
+		var roomname = socket.room;
+		console.log('여기 디스커넥션'+socket.room);*/
+		socket.leave(socket.room);
+
+
+
 	});
 
 

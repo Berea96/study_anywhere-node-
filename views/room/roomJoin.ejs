@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>room Join</title>
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="//code.jquery.com/jquery-1.12.0.min.js"></script>
+
+
+<script type="text/javascript">
+
+// 소켓 이벤트를 연결합니다.
+var socket = io.connect();
+socket.emit('join', '<%= roomname %>');
+socket.on('redirect', function(redirect) {
+	if(redirect.bool){
+	    $('#goto').attr('action', redirect.destination);
+	    $('#goto').submit();
+	}else{
+		alert('최대인원이 초과되었습니다.');	
+		$('#goto').attr('action', redirect.destination);
+	    $('#goto').submit();
+	}
+}); 
+
+
+</script>
+
+</head>
+<body>
+
+
+<form id="goto" method="POST">
+	<input type="hidden" name="roomname" value="<%= roomname %>">
+</form>
+
+</body>
+</html>
