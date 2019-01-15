@@ -28,7 +28,6 @@ router.post('/identify', function(req, res){
 	sess.mem_ID = req.body.mem_ID;
 	sess.mem_Hash = javahash;
 
-
 	db_member.hash(req.body.mem_ID, function(data){
 
 		var id = data.member_pw;
@@ -51,7 +50,9 @@ router.post('/identify', function(req, res){
 
 
 router.get('/', function(req,res){
-	res.render('lobby.ejs' , {"title": "lobby"});
+	res.render('lobby.ejs' , {"title": "lobby",
+														"member_id": sess.mem_ID,
+														"member_hash": sess.mem_Hash});
 })
 
 //========================================================================================

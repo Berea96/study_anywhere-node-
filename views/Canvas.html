@@ -9,7 +9,7 @@
 
   <style type="text/css">
   body {
-    margin: 0px;
+    margin: 2px;
   }
   table {
     border: 5px solid gray;
@@ -41,6 +41,7 @@
     // Canvas 객체를 추출합니다.
     var canvas = document.getElementById('canvas');
     var context = canvas.getContext('2d');
+
 
     var image = new Image();
     socket.on('setImage', (data) => {
@@ -135,9 +136,9 @@
 <body>
   <table>
     <tr>
-      <td rowspan="3">
+      <td rowspan="3" id="canvasTd">
         <!-- 캔버스 -->
-        <canvas id="canvas" width="500" height="300"></canvas>
+        <canvas id="canvas" width="500" height="400"></canvas>
       </td>
       <td height="200">
         <!-- 색상 선택기 -->

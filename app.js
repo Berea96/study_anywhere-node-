@@ -44,15 +44,22 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/', indexRouter);
 app.use('/lobby', lobbyRouter);
-app.use('/room', roomRouter)
+app.use('/room', roomRouter);
 
 //========================================================================================
 
 var userrooms = [];
+var user = [];
 
 io.sockets.on('connect', function(socket){
 	var roomId = "";
+	var name = "";
 
+	if(name === "") {
+		name = sess.member_ID;
+	}
+	else
+		name = name;
 /*	var userroom = {
 			userid: string,
 			roomname: string,
@@ -60,7 +67,9 @@ io.sockets.on('connect', function(socket){
 			roommaxp: int,
 			roomcurp: int
 	}*/
-
+	socket.on('user', (data) => {
+		socket.emit('user', name);
+	});
 
 	socket.on('join', function(data){
 		console.log('data at join : '+data);
@@ -84,6 +93,12 @@ io.sockets.on('connect', function(socket){
 				socket.join(data);
 				socket.room = data;
 
+				io.sockets.in(roomId).emit('getImage', "");
+				socket.on('getImage', (data) => {
+					console.log('image save..........')
+					io.sockets.in(roomId).emit('setImage', data);
+				});
+
 
 				var destination = 'http://localhost:3000/room';
 				var redirect ={
@@ -104,11 +119,52 @@ io.sockets.on('connect', function(socket){
 						"destination": destination
 				}
 				socket.emit('redirect', redirect);
-
 			}
-
 		});
 
+	});
+
+	socket.on('login', (data) => {
+		//console.log('Client logged-in: \n name: ' + sess.mem_ID + '\n userid: ' + data.userid);
+
+		roomId = data.roomname;
+
+		//socket.leave(socket.room);
+		socket.join(roomId);
+		socket.name = data.name;
+		name = socket.name;
+		user.push(socket.name);
+		socket.userid = data.userid;
+		socket.room = data;
+
+		console.log(roomId);
+
+		io.sockets.in(roomId).emit('getUser', socket.name);
+	});
+
+	socket.on('joinUser', (data) => {
+		console.log(roomId + "방 현재 " + user.length + "명 접속 중");
+		io.sockets.in(roomId).emit('login', user);
+	});
+
+	socket.on('getTime', (data) => {
+		var currentTime = new Date();
+
+		io.sockets.in(roomId).emit('setTime', "");
+	});
+
+	socket.on('chat', (data) => {
+		console.log('Message from %s: %s', socket.name, data.msg);
+
+		var msg = {
+			from: {
+				name: socket.name,
+				userid: socket.userid
+			},
+			msg: data.msg
+		};
+
+		io.sockets.in(roomId).emit('chat', msg);
 	});
 
 	socket.on('draw', function(data){
@@ -160,6 +216,9 @@ io.sockets.on('connect', function(socket){
 		})
 	});
 
+	socket.on('forceDisconnect', () => {
+		socket.disconnect();
+	});
 
 	socket.on('disconnect', function(){
 		//delete usernames[socket.username];
@@ -172,13 +231,16 @@ io.sockets.on('connect', function(socket){
 
 		var roomname = socket.room;
 		console.log('여기 디스커넥션'+socket.room);*/
+		for(var i = 0; i < user.length; i++) {
+			if(user[i] === name) {
+				user.splice(i, 1);
+				break;
+			}
+		}
+		console.log(name + " : disconnected");
+		io.sockets.in(roomId).emit("exit", {"name": name});
 		socket.leave(socket.room);
-
-
-
 	});
-
-
 })
 
 

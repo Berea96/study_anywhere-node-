@@ -40,12 +40,11 @@ router.get('/roomList', function(req,res){
 		console.log("in/room : "+row);
 		userrooms = row;
 		res.send(userrooms);
-	});	
+	});
 	//res.redirect('/roomList/1')
 });
 
 
-<<<<<<< HEAD
 // router.get('/roomList/1', function(req,res){
 // 	//var currentRoom = Object.keys(io.sockets.adapter.rooms).filter(item => item!=io.sockets.id);
 // 	db_room.getList(userrooms, function(row){
@@ -77,39 +76,6 @@ router.get('/roomList', function(req,res){
 // 	});
 
 // });
-=======
-router.get('/roomList/1', function(req,res){
-	//var currentRoom = Object.keys(io.sockets.adapter.rooms).filter(item => item!=io.sockets.id);
-	db_room.getList(userrooms, function(row){
-		console.log("in/room : "+row);
-		userrooms = row;
-		//res.send(userrooms);
-		
-		pageNum = 1;
-		var rooms = new Array;
-		for(var i = startPage-1; i<endPage; i++){
-			rooms.push(userrooms[i]);
-		}
-		
-		
-		
-		var data = {
-			"userrooms": rooms,
-			"pageNum": pageNum,
-			"size": size,
-			"cnt": cnt,
-			"totalPage": totalPage,
-			"pageSize": pageSize,
-			"startPage": startPage,
-			"endPage": endPage
-		}
-		
-		res.render('/room/roomList.ejs',{ "data" : data });		
-		
-	});
-	
-});
->>>>>>> a459647bbf8e186ea18fb11bdb39a12a87fdb46b
 
 router.post('/roomCheck', function(req,res){
 	var rname = req.body.rname;
