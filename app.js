@@ -55,11 +55,7 @@ io.sockets.on('connect', function(socket){
 	var roomId = "";
 	var name = "";
 
-	if(name === "") {
-		name = sess.member_ID;
-	}
-	else
-		name = name;
+
 /*	var userroom = {
 			userid: string,
 			roomname: string,
@@ -73,6 +69,12 @@ io.sockets.on('connect', function(socket){
 
 	socket.on('join', function(data){
 		console.log('data at join : '+data);
+
+		if(name === "") {
+			name = sess.member_ID;
+		}
+		else
+			name = name;
 
 		db_room.getList(data, function(row){
 			userrooms = row;
@@ -98,7 +100,6 @@ io.sockets.on('connect', function(socket){
 					console.log('image save..........')
 					io.sockets.in(roomId).emit('setImage', data);
 				});
-
 
 				var destination = 'http://localhost:3000/room';
 				var redirect ={
@@ -217,7 +218,7 @@ io.sockets.on('connect', function(socket){
 	});
 
 	socket.on('forceDisconnect', () => {
-		socket.disconnect();
+		// socket.disconnect();
 	});
 
 	socket.on('disconnect', function(){
@@ -237,19 +238,16 @@ io.sockets.on('connect', function(socket){
 				break;
 			}
 		}
-		console.log(name + " : disconnected");
-		io.sockets.in(roomId).emit("exit", {"name": name});
-		socket.leave(socket.room);
+		if(name === "" || name == null) {
+			console.log("disconnected");
+		}
+		else {
+				console.log(name + " : disconnected");
+				io.sockets.in(roomId).emit("exit", {"name": name});
+		}
+			socket.leave(socket.room);
 	});
 })
-
-
-
-
-
-
-
-
 
 //========================================================================================
 

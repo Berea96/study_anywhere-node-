@@ -94,7 +94,6 @@ router.post('/roomCheck', function(req,res){
 	})
 });
 
-
 router.get('/existCheck', function(req,res){
 
 	var roomname = req.query.roomname;
