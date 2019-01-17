@@ -21,20 +21,10 @@ router.use(session({
 var userrooms = [];
 
 
-var pageNum ;
-var size = 10;  // 한 페이지에 보여줄 개수
-var cnt = userrooms.length;  // 전체 글의 개수
-var totalPage = Math.ceil(cnt / size);  // 전체 페이지의 수
-var pageSize = 10; // 페이지 링크의 개수
-
-var startPage = (pageNum-1) * size+1;
-var endPage = pageNum * size;
-if(endPage > totalPage) {
-    endPage = totalPage;
-}
 
 
-router.get('/roomList', function(req,res){
+
+/*router.get('/roomList', function(req,res){
 	//var currentRoom = Object.keys(io.sockets.adapter.rooms).filter(item => item!=io.sockets.id);
 	db_room.getList(userrooms, function(row){
 		console.log("in/room : "+row);
@@ -42,51 +32,64 @@ router.get('/roomList', function(req,res){
 		res.send(userrooms);
 	});
 	//res.redirect('/roomList/1')
+});*/
+
+
+router.get('/roomList/:num', function(req,res){
+	//var currentRoom = Object.keys(io.sockets.adapter.rooms).filter(item => item!=io.sockets.id);
+	db_room.getList(userrooms, function(row){
+		console.log("in/room : "+row);
+		userrooms = row;
+		//res.send(userrooms);
+
+
+		var pageNum = req.params.num;
+		var size = 5;  // 한 페이지에 보여줄 개수
+		var begin = (pageNum-1)*size;
+		var cnt = userrooms.length;  // 전체 글의 개수
+		var totalPage = Math.ceil(cnt / size);  // 전체 페이지의 수
+		var pageSize = 10; // 페이지 링크의 개수
+
+		var startPage = Math.floor((pageNum-1)  / pageSize) * pageSize + 1;
+		var endPage = startPage + (pageSize - 1);
+		if(endPage > totalPage) {
+		    endPage = totalPage;
+		}
+
+		var data = {
+			"userrooms": row,
+			"pageNum": pageNum,
+			"size": size,
+			"begin": begin,
+			"cnt": cnt,
+			"totalPage": totalPage,
+			"pageSize": pageSize,
+			"startPage": startPage,
+			"endPage": endPage
+		}
+
+		res.send(data);
+
+	});
+
 });
 
-
-// router.get('/roomList/1', function(req,res){
-// 	//var currentRoom = Object.keys(io.sockets.adapter.rooms).filter(item => item!=io.sockets.id);
-// 	db_room.getList(userrooms, function(row){
-// 		console.log("in/room : "+row);
-// 		userrooms = row;
-// 		//res.send(userrooms);
-//
-// 		pageNum = 1;
-// 		var rooms = new Array;
-// 		for(var i = startPage-1; i<endPage; i++){
-// 			rooms.push(userrooms[i]);
-// 		}
-//
-//
-//
-// 		var data = {
-// 			"userrooms": rooms,
-// 			"pageNum": pageNum,
-// 			"size": size,
-// 			"cnt": cnt,
-// 			"totalPage": totalPage,
-// 			"pageSize": pageSize,
-// 			"startPage": startPage,
-// 			"endPage": endPage
-// 		}
-//
-// 		res.render(data);
-//
-// 	});
-
-// });
-
 router.post('/roomCheck', function(req,res){
+
+
 	var rname = req.body.rname;
 	var rpass = req.body.rpass;
 	console.log(rname);
 	console.log(rpass);
 
-	db_room.roomCheck(rname, function(row){
-		if(row.roompass == rpass){
+
+	db_room.roomCheck(rname, function(result){
+		if(result.roompass == rpass){
 			console.log('비번 맞음')
-			res.render('room/roomJoin',{ "roomname": rname });
+			res.render('room/roomJoin',{
+				"roomname": rname,
+				"mem_ID": req.session.mem_ID
+				});
 		}else{
 			res.writeHead(200, {'Content-Type':'text/html; charset=utf-8'});
 			res.end('<script>alert("비밀번호가 일치하지 않습니다"); window.location="http://localhost:3000/";</script>')
@@ -116,7 +119,43 @@ router.get('/existCheck', function(req,res){
 
 })
 
+router.get('/searchRoom/rname', function(req,res){
+
+	var searchText = req.query.searchText;
+	console.log(searchText);
+
+	db_room.searchRname(searchText, function(result){
+		console.log(result);
+
+		res.send(result);
+
+	});
+
+});
+router.get('/searchRoom/userid', function(req,res){
+
+	var searchText = req.query.searchText;
+	console.log(searchText);
+
+	db_room.searchRid(searchText, function(result){
+		console.log(result);
+
+		res.send(result);
+
+	});
+
+});
+
+router.get('/logout', function(req,res){
+	req.session.destroy(function(err){
+		if(err) console.log('err',err);
+	});  // 세션 삭제
+	res.clearCookie('sid'); // 세션 쿠키 삭제
+	res.redirect('http://localhost/Study_Anywhere/memberLogout.do');
+})
+
 
 //========================================================================================
+
 
 module.exports = router;

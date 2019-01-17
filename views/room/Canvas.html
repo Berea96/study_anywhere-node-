@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title></title>
+  <link rel="stylesheet" href="/farbtastic.css" />
+  <script src="//code.jquery.com/jquery-1.12.0.min.js"></script>
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/farbtastic.js"></script>
+
+  <style type="text/css">
+  body {
+    margin: 2px;
+  }
+  table {
+    border: 5px solid gray;
+  }
+  td {
+    border: 1px solid gray;
+  }
+  canvas {
+    cursor: crosshair;
+    -webkit-box-shadow: 1px 1px 20px #ccc;
+    -moz-box-shadow: 1px 1px 20px #ccc;
+    box-shadow: 1px 1px 20px #ccc;
+  }
+  </style>
+
+  <script>
+  // Point 생성자 함수를 생성합니다.
+  function Point(event, target) {
+    this.x = event.pageX - $(target).position().left;
+    this.y = event.pageY - $(target).position().top;
+  }
+  </script>
+
+  <script>
+  // 소켓 이벤트를 연결합니다.
+  var socket = io.connect();
+
+  $(document).ready(function () {
+    // Canvas 객체를 추출합니다.
+    var canvas = document.getElementById('canvas');
+    var context = canvas.getContext('2d');
+
+/* 
+    var image = new Image();
+    socket.on('setImage', (data) => {
+      image.src = data;
+    })
+    image.onload = () => {
+      context.drawImage(image, 0, 0);
+    } */
+
+    // 변수를 선언합니다.
+    var width = 5;
+    var color = '#000000';
+    var isDown = false;
+    var newPoint, oldPoint;
+    // UI를 구성합니다.
+    $('#colorpicker').farbtastic(function (data) {
+      color = data;
+    });
+    // 이벤트를 연결합니다.
+    canvas.addEventListener('mousedown', function (event) {
+      isDown = true;
+      oldPoint = new Point(event, this);
+    });
+    canvas.addEventListener('mouseup', function () { isDown = false; });
+    canvas.addEventListener('mousemove', function (event) {
+      if (isDown) {
+        newPoint = new Point(event, this);
+        socket.emit('draw', {
+          width: width,
+          color: color,
+          x1: oldPoint.x,
+          y1: oldPoint.y,
+          x2: newPoint.x,
+          y2: newPoint.y
+        });
+        oldPoint = newPoint;
+      }
+    });
+    //굵기 조절
+    $('#sliderA').change(function () {
+      width = $(this).val();
+    });
+    socket.emit('joinCanvas', '<%= roomname %>');
+    socket.on('line', function (data) {
+      context.lineWidth = data.width;
+      context.strokeStyle = data.color;
+      context.beginPath();
+      context.moveTo(data.x1, data.y1);
+      context.lineTo(data.x2, data.y2);
+      context.stroke();
+    });
+    socket.on('clearAll', (data) => {
+      context.clearRect(data.x, data.y, data.width, data.height);
+    });
+    socket.on('getImage', () => {
+      socket.emit('getImage', canvas.toDataURL());
+    });
+    //펜 버튼 클릭시
+    $("#pen").click(() => {
+      width = 5;
+      color = '#000000';
+    });
+    //지우개 버튼 클릭시
+    $("#eraser").click(() => {
+      width = 50;
+      color = '#ffffff';
+    });
+    //전체 지우기 클릭시
+    $("#eraserAll").click(() => {
+      context.clearRect(0, 0, canvas.width, canvas.height);
+      socket.emit('clearAll', {
+        x: 0,
+        y: 0,
+        width: canvas.width,
+        height: canvas.height
+      });
+    })
+  });
+</script>
+
+<style media="screen">
+  input {
+    width: 95%;
+  }
+</style>
+
+</head>
+<body>
+  <table>
+    <tr>
+      <td rowspan="3" id="canvasTd">
+        <!-- 캔버스 -->
+        <canvas id="canvas" width="500" height="400"></canvas>
+      </td>
+      <td height="200">
+        <!-- 색상 선택기 -->
+        <div id="colorpicker"></div>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <button id="pen">펜</button>
+        <button id="eraser">지우개</button>
+        <button id="eraserAll">전체</button>
+      </td>
+    </tr>
+    <tr>
+      <td height="25">
+        <!-- 슬라이더: 두께 선택 -->
+        <div align="center">두께조절</div>
+        <input id="sliderA" type="range" min="0" max="20" value="5" /><br/>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

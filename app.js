@@ -12,7 +12,7 @@ var bodyParser = require('body-parser');
 
 //웹 서버와 소켓 서버를 생성
 var app = express();
-var io = socketio();
+io = socketio();
 var server = require('http').createServer(app);
 //소켓 서버를 웹 서버에 연결
 io.attach(server);
@@ -41,15 +41,25 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
+app.use(session({
+	key: 'sid',
+	 secret: 'study_anywhere',
+	 resave: false,
+	 saveUninitialized: true,
+	 cookie: {
+		    maxAge: 24000 * 60 * 60 // 쿠키 유효기간 24시간
+		  }
+}));
+
 
 app.use('/', indexRouter);
 app.use('/lobby', lobbyRouter);
 app.use('/room', roomRouter);
 
+
 //========================================================================================
 
-var userrooms = [];
-var user = [];
+var usernames = [];
 
 io.sockets.on('connect', function(socket){
 	var roomId = "";
@@ -63,8 +73,27 @@ io.sockets.on('connect', function(socket){
 			roommaxp: int,
 			roomcurp: int
 	}*/
-	socket.on('user', (data) => {
-		socket.emit('user', name);
+
+	socket.on('guestjoin', function(data){
+		var username = data.username;
+
+		socket.username = username;
+		socket.room = data.roomname;
+		usernames[username] = username;
+		socket.join(data.roomname);
+		socket.emit('servernoti', 'green', 'you has connected Chat');
+
+		var userlist = new Array();
+
+		for (var name in usernames) {
+			userlist.push(usernames[name]);
+		}
+
+		io.sockets.in(socket.room).emit('updateuser', userlist);
+
+		socket.broadcast.to(data.roomname).emit('servernoti', 'green', username + ' has connected to ' + data.roomname);
+//		if (data.roomname!='lobby')
+//			socket.emit('updaterooms', rooms, roomname);
 	});
 
 	socket.on('join', function(data){
@@ -91,8 +120,8 @@ io.sockets.on('connect', function(socket){
 			if(result != 1){
 
 				roomId = data;
-				socket.leave(socket.room);
-				socket.join(data);
+				//socket.leave(socket.room);
+				//socket.join(data);
 				socket.room = data;
 
 				io.sockets.in(roomId).emit('getImage', "");
@@ -169,12 +198,18 @@ io.sockets.on('connect', function(socket){
 	});
 
 	socket.on('draw', function(data){
-		io.sockets.in(roomId).emit('line', data);
+		io.sockets.in(socket.room).emit('line', data);
 	});
 
 	socket.on('clearAll', (data) => {
-		io.sockets.in(roomId).emit('clearAll', data);
+		io.sockets.in(socket.room).emit('clearAll', data);
 	});
+
+	socket.on('joinCanvas', function(data){
+		socket.join(data);
+		socket.room = data;
+	});
+
 
 	socket.on('onCreateRoom', function(data){
 		console.log('on server onCreateRoom')
@@ -190,7 +225,7 @@ io.sockets.on('connect', function(socket){
 			roomexist = result;
 
 			if(!roomexist){
-				socket.leave(socket.room);
+				//socket.leave(socket.room);
 				//socket.join(data.roomname);
 				socket.room = data.roomname;
 				data.rcode = 0;
@@ -217,35 +252,28 @@ io.sockets.on('connect', function(socket){
 		})
 	});
 
-	socket.on('forceDisconnect', () => {
-		// socket.disconnect();
+
+
+	socket.on('sendmsg', function (data) {
+		console.log(data.message);
+		console.log(data.mem_ID);
+		io.sockets.in(socket.room).emit('recvmsg', data.mem_ID, data.message);
 	});
 
+
+
 	socket.on('disconnect', function(){
-		//delete usernames[socket.username];
-		//var userlist = new Array();
-		/*for (var name in usernames) {
+		delete usernames[socket.username];
+		var userlist = new Array();			
+		for (var name in usernames) {
 			userlist.push(usernames[name]);
 		}
 		io.sockets.emit('updateuser', userlist);
+		if(typeof(socket.username) != 'undefined'){
 		socket.broadcast.emit('servernoti', 'red', socket.username + ' has disconnected');
+		}
+		socket.leave(socket.room);
 
-		var roomname = socket.room;
-		console.log('여기 디스커넥션'+socket.room);*/
-		for(var i = 0; i < user.length; i++) {
-			if(user[i] === name) {
-				user.splice(i, 1);
-				break;
-			}
-		}
-		if(name === "" || name == null) {
-			console.log("disconnected");
-		}
-		else {
-				console.log(name + " : disconnected");
-				io.sockets.in(roomId).emit("exit", {"name": name});
-		}
-			socket.leave(socket.room);
 	});
 })
 

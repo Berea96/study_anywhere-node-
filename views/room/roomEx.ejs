@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title><%=title%></title>
+  <!-- <script src="//code.jquery.com/jquery-1.12.0.min.js"></script> -->
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js"></script>
+  <script src="/socket.io/socket.io.js"></script>
+
+  <style>
+  html {
+    width: 98%;
+    height: 98%;
+  }
+  body {
+    width: 98%;
+    height: 98%;
+  }
+  .head {
+    width: 100%;
+    height: 15%;
+    background-color: red;
+  }
+  .left {
+    float: left;
+    width: 20%;
+    height: 69%;
+    background-color: blue;
+  }
+  .menu div {
+    width: 100%;
+    height: 30px;
+    text-align: center;
+    background-color: white;
+    border: 1px solid;
+
+  }
+  .center {
+    float: left;
+    width: 60%;
+    height: 69%;
+  }
+  #chatLogs {
+    border: 1px solid;
+    top: 150px;
+    height: 150px;
+    width:100%;
+    overflow-y: scroll;
+    word-wrap: break-word;
+    word-break: break-all;
+    background-color: #cadff2;
+  }
+  .form-inline {
+    width: 100%;
+  }
+  .right {
+    float: left;
+    width: 20%;
+    height: 69%;
+    background-color: yellow;
+  }
+  #join {
+    position: relative;
+    border: 1px solid;
+    overflow-y: scroll;
+    word-wrap: break-word;
+    word-break: break-all;
+    width: 99%;
+    height: 99%;
+    background-color: white;
+  }
+  .currentTime {
+    text-align: center;
+  }
+  #chatLogs {
+    position: relative;
+  }
+  #input-group {
+    position: relative;
+    top: 150px;
+    width: 400px;
+  }
+  #msgForm {
+    margin-left: 3px;
+    width: 70%;
+  }
+  #send {
+    width: 50px;
+  }
+  #bottom {
+    width: 30px;
+  }
+  .footer {
+    clear: both;
+    width: 100%;
+    height: 15%;
+    background-color: orange;
+  }
+</style>
+<script type="text/javascript">
+  var socket = io.connect();
+  var usernames = [];
+
+  $(document).ready(() => {
+
+    $("#canvas").click(() => {
+      var form = document.form1;
+      window.open("", "canvas", "width=720, height=415");
+
+      form.action = "http://localhost:3000/room/canvas";
+      form.target = "canvas";
+      form.roomname.value = '<%= roomname %>';
+      form.submit();
+    });
+
+    $("#board").click(() => {
+      alert("게시판 준비중");
+    });
+
+    $("#timer").click(() => {
+      window.open("http://localhost:3000/room/timer", "timer", "width=335, height=150, top=605, left=-10");
+    });
+
+    $("#calendar").click(() => {
+      alert("달력 준비중");
+    });
+
+
+    });
+
+//=======================================================================================
+
+socket.on('connect', function(){
+  socket.emit('guestjoin', {
+    'roomname': '<%= roomname %>',
+    'username': '<%= mem_ID %>'
+});
+
+
+});
+
+console.log('<%= roomname %>')
+console.log('<%= mem_ID %>')
+    socket.on('servernoti', function (col, data) {
+      $('#conversation').append('<b><font color='+col+'>' + data + '</font></b><br>');
+      if ($('#scrolldiv').prop('scrollHeight') > $('#scrolldiv').height())
+        $('#scrolldiv').scrollTop($('#scrolldiv').prop('scrollHeight'));
+    });
+
+    socket.on('updateuser', function (usernames) {
+      $('#userlist').empty();
+      $.each(usernames, function (key, value) {
+        $('#userlist').append('<div>' + value + '</div>');
+      });
+    });
+
+    socket.on('recvmsg', function (username, data) {
+      console.log(username, data);
+      $('#conversation').append('<b>'+username + ':</b> ' + data + '<br>');
+      if ($('#scrolldiv').prop('scrollHeight') > $('#scrolldiv').height())
+        $('#scrolldiv').scrollTop($('#scrolldiv').prop('scrollHeight'));
+    });
+
+    $(function(){
+      $('#data').keypress(function(e) {
+        if(e.which == 13) {
+          $(this).blur();
+          $('#datasend').focus().click();
+          $('#data').focus();
+        }
+      });
+
+      $('#datasend').click( function() {
+        var message = $('#data').val();
+        $('#data').val('');
+
+        data={
+          'message': message,
+          'mem_ID': '<%= mem_ID %>'
+        }
+
+        socket.emit('sendmsg', data);
+      });
+    });
+
+  </script>
+</head>
+<body>
+  <div class="head"><%=roomname%></div>
+  <div class="left">
+    왼손
+    <div class="menu" id="menu">
+      <form class="form1" name="form1" method="post">
+        <div class="divs" id="canvas">그림판</div>
+        <div class="divs" id="board">게시판</div>
+        <div class="divs" id="timer">타이머</div>
+        <div class="divs" id="calendar">달력</div>
+        <input type="hidden" name="roomname">
+      </form>
+      <a href="http://localhost:3000/">로비로 돌아가자</a>
+    </div>
+  </div>
+  <div class="center">
+    <div class="currentTime">
+      Welcome
+    </div>
+    <!-- <div id="chatLogs">
+    </div>
+    <div id="input-group" class="form-group">
+      <form class="form-inline" action="">
+        <input type="text" class="form_control" id="msgForm" autocomplete="off">
+        <button type="submit" id="send" class="btn btn-primary">Send</button>
+        <input type="button" id="bottom" name="button" value="↓">
+      </form>
+    </div> -->
+    <!--================================================================================-->
+
+      <div id="box">
+      	<div id="scrolldiv" style="float:left;width:80%;height:250px; margin-top:20px; overflow: auto;border:2px solid gray;">
+      		<div id="conversation"></div>
+      	</div>
+      	<div style="float:left;width:20%;height:250px;border:2px solid gray;">
+      		<div id="userlist" style="width:100%;height:250px; margin:20px 20px 10px 10px; overflow: auto;"></div>
+      	</div>
+      	<div >
+      		<input id="data" style="width:80%; overflow:hidden;" />
+      		<input type="button" id="datasend" value="send" />
+      	</div>
+      </div>
+
+
+      <!--================================================================================-->
+  </div>
+  <div class="right">
+
+    <div id="join"></div>
+  </div>
+  <div class="footer">
+    다리~
+  </div>
+</body>
+</html>

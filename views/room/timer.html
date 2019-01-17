@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<title>timer</title>
+	<link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.3/css/bootstrap.min.css">
+	<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.6.3/css/all.css" integrity="sha384-UHRtZLI+pbxtHCWp1t77Bi1L4ZtiqrqD80Kn4Z8NTSRyMA2Fd33n5dQ8lWUE00s/" crossorigin="anonymous">
+
+	<style>
+	body {
+		margin: 10px;
+	}
+	input[type=text] {
+		width: 36px;
+		height: 60px;
+		text-align: right;
+		font-size: 30px;
+		font-weight: bold;
+	}
+
+	#hUP {
+		position: absolute;
+		top: 10px;
+		left: 10px;
+	}
+	#hText {
+		position: absolute;
+		top: 50px;
+		left: 10px;
+	}
+	#hDO {
+		position: absolute;
+		top: 113px;
+		left: 10px;
+	}
+
+	#m1UP {
+		position: absolute;
+		top: 10px;
+		left: 70px;
+	}
+	#m1Text {
+		position: absolute;
+		top: 50px;
+		left: 70px;
+	}
+	#m1DO {
+		position: absolute;
+		top: 113px;
+		left: 70px;
+	}
+
+	#m2UP {
+		position: absolute;
+		top: 10px;
+		left: 110px;
+	}
+	#m2Text {
+		position: absolute;
+		top: 50px;
+		left: 110px;
+	}
+	#m2DO {
+		position: absolute;
+		top: 113px;
+		left: 110px;
+	}
+
+	#s1UP {
+		position: absolute;
+		top: 10px;
+		left: 170px;
+	}
+	#s1Text {
+		position: absolute;
+		top: 50px;
+		left: 170px;
+	}
+	#s1DO {
+		position: absolute;
+		top: 113px;
+		left: 170px;
+	}
+
+	#s2UP {
+		position: absolute;
+		top: 10px;
+		left: 210px;
+	}
+	#s2Text {
+		position: absolute;
+		top: 50px;
+		left: 210px;
+	}
+	#s2DO {
+		position: absolute;
+		top: 113px;
+		left: 210px;
+	}
+
+	#start {
+		position: absolute;
+		top: 10px;
+		left: 270px;
+	}
+	#stop {
+		position: absolute;
+		top: 113px;
+		left: 270px;
+	}
+
+	.time {
+		font-size: 20px;
+	}
+</style>
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js"></script>
+
+<script type="text/javascript">
+	function playSound() {
+		var sound = document.getElementById("audio");
+		setTimeout(() => {
+			sound.play();
+		}, 200);
+		sound.play();
+	}
+	function hourIncrease() {
+		var h = $("#h");
+		var hour = Number(h.val());
+		if(hour == 9) {
+			return 9;
+		}
+		hour = hour + 1;
+		h.val(hour);
+		return hour;
+	}
+	function hourDecrease() {
+		var h = $("#h");
+		playSound();
+		var hour = Number(h.val());
+		if(hour == 0) {
+			return 0;
+		}
+		hour = hour - 1;
+		h.val(hour);
+		return hour + 1;
+	}
+	function minuteIncrease1() {
+		var m = $("#m1");
+		var minute = Number(m.val());
+		if(minute == 5) {
+			var h = hourIncrease();
+			if(h == 9) {
+				return;
+			}
+			m.val(0);
+			return;
+		}
+		minute = minute + 1;
+		m.val(minute);
+	}
+	function minuteDecrease1() {
+		var m = $("#m1");
+		var minute = Number(m.val());
+		if(minute == 3) {
+			playSound();
+		}
+		if(minute == 0) {
+			var h = hourDecrease();
+			if(h == 0) {
+				return 0;
+			}
+			m.val(5);
+			$("#m2").val(9);
+			return 5;
+		}
+		minute = minute - 1;
+		m.val(minute);
+	}
+	function minuteIncrease2() {
+		var m = $("#m2");
+		var minute = Number(m.val());
+		if(minute == 9) {
+			var m1 = minuteIncrease1();
+			if(m1 == 5) {
+				return;
+			}
+			m.val(0);
+			return;
+		}
+		minute = minute + 1;
+		m.val(minute);
+	}
+	function minuteDecrease2() {
+		var m = $("#m2");
+		var minute = Number(m.val());
+		if(minute == 0) {
+			var m1 = minuteDecrease1();
+			if(m1 == 0) {
+				return 0;
+			}
+			m.val(9);
+			return 9;
+		}
+		minute = minute - 1;
+		m.val(minute);
+	}
+	function secondIncrease1() {
+		var s = $("#s1");
+		var second = Number(s.val());
+		if(second == 5) {
+			var m = minuteIncrease2();
+			if(m == 9) {
+				return;
+			}
+			s.val(0);
+			return;
+		}
+		second = second + 1;
+		s.val(second);
+	}
+	function secondDecrease1() {
+		var s = $("#s1");
+		var second = Number(s.val());
+		if(second == 0) {
+			var m2 = minuteDecrease2();
+			if(m2 == 0){
+				return 0;
+			}
+			s.val(5);
+			$("#s2").val(9);
+			return 5;
+		}
+		second = second - 1;
+		s.val(second);
+	}
+	function secondIncrease2() {
+		var s = $("#s2");
+		var second = Number(s.val());
+		if(second == 9) {
+			var s1 = secondIncrease1();
+			if(s1 == 5) {
+				return;
+			}
+			s.val(0);
+			return;
+		}
+		second = second + 1;
+		s.val(second);
+	}
+	function secondDecrease2() {
+		var s = $("#s2");
+		timeCheck();
+		var second = Number(s.val());
+		if(second == 0) {
+			var s1 = secondDecrease1();
+			if(s1 == 0) {
+				return;
+			}
+			s.val(9);
+			return;
+		}
+		second = second - 1;
+		s.val(second);
+	}
+	var startTimer;
+	var stopTimer;
+	var stopKey;
+
+	function timeCheck() {
+		var h = Number($("#h").val());
+		var m1 = Number($("#m1").val());
+		var m2 = Number($("#m2").val());
+		var s1 = Number($("#s1").val());
+		var s2 = Number($("#s2").val());
+
+		if(h == 0 && m1 == 0 && m2 == 1 && s1 == 0 && s2 == 0) {
+			playSound();
+			$("div input").css("color", "red");
+		}
+		else if(h == 0 && m1 == 0 && m2 == 0 && s1 == 3 && s2 == 0) {
+			playSound();
+			$("div input").css("color", "red");
+		}
+		else if(h == 0 && m1 == 0 && m2 == 0 && s1 == 0 && s2 == 0) {
+			$("div input").css("color", "black");
+		}
+	}
+
+	startTimer = function() {
+		$("#startB").removeAttr("onclick");
+		$("#stopB").attr("onclick", "stopTimer()");
+		stopKey = setInterval(() => {
+			secondDecrease2();
+		}, 1000);
+	}
+	stopTimer = function() {
+		$("#stopB").removeAttr("onclick");
+		$("#startB").attr("onclick", "startTimer()");
+		clearInterval(stopKey);
+	}
+</script>
+</head>
+<body>
+
+	<div class="container-fluid">
+		<div class="row">
+			<div id="hUP">
+				<button class="btn btn-dark" name="hUP" onclick="hourIncrease()" onm="hourIncrease()">
+					<i class="fas fa-angle-up"></i>
+				</button>
+			</div>
+			<div id="m1UP">
+				<button class="btn btn-dark" name="m1UP" onclick="minuteIncrease1()">
+					<i class="fas fa-angle-up"></i>
+				</button>
+			</div>
+			<div id="m2UP">
+				<button class="btn btn-dark" name="m2UP" onclick="minuteIncrease2()">
+					<i class="fas fa-angle-up"></i>
+				</button>
+			</div>
+			<div id="s1UP">
+				<button class="btn btn-dark" name="s1UP" onclick="secondIncrease1()">
+					<i class="fas fa-angle-up"></i>
+				</button>
+			</div>
+			<div id="s2UP">
+				<button class="btn btn-dark" name="s2UP" onclick="secondIncrease2()">
+					<i class="fas fa-angle-up"></i>
+				</button>
+			</div>
+			<div id="start">
+				<button class="btn btn-dark" id="startB" name="start" onclick="startTimer()">
+					start
+				</button>
+			</div>
+		</div>
+		<div class="row">
+			<div id="hText">
+				<input type="text" id="h" name="h" size="1" maxlength="1" value="0">
+			</div>
+			<div>
+				<label class="time"></label>
+			</div>
+			<div id="m1Text">
+				<input type="text" id="m1" name="m1" size="1" maxlength="1" value="0">
+			</div>
+			<div id="m2Text">
+				<input type="text" id="m2" name="m2" size="1" maxlength="1" value="0">
+			</div>
+			<div>
+				<label class="time"></label>
+			</div>
+			<div id="s1Text">
+				<input type="text" id="s1" name="s1" size="1" maxlength="1" value="0">
+			</div>
+			<div id="s2Text">
+				<input type="text" id="s2" name="s2" size="1" maxlength="1" value="0">
+			</div>
+			<div>
+				<label class="time"></label>
+			</div>
+		</div>
+		<div class="row">
+			<div id="hDO">
+				<button class="btn btn-dark" name="hDO" onclick="hourDecrease()">
+					<i class="fas fa-angle-down"></i>
+				</button>
+			</div>
+			<div id="m1DO">
+				<button class="btn btn-dark" name="m1DO" onclick="minuteDecrease1()">
+					<i class="fas fa-angle-down"></i>
+				</button>
+			</div>
+			<div id="m2DO">
+				<button class="btn btn-dark" name="m2DO" onclick="minuteDecrease2()">
+					<i class="fas fa-angle-down"></i>
+				</button>
+			</div>
+			<div id="s1DO">
+				<button class="btn btn-dark" name="s1DO" onclick="secondDecrease1()">
+					<i class="fas fa-angle-down"></i>
+				</button>
+			</div>
+			<div id="s2DO">
+				<button class="btn btn-dark" name="s2DO" onclick="secondDecrease2()">
+					<i class="fas fa-angle-down"></i>
+				</button>
+			</div>
+			<div id="stop">
+				<button class="btn btn-dark" id="stopB" name="stop" onclick="stopTimer()">
+					stop
+				</button>
+			</div>
+			<audio id="audio" src="http://www.soundjay.com/button/beep-07.wav" autoplay="false" ></audio>
+		</div>
+	</div>
+
+	<script src="//ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js"></script>
+	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/js/bootstrap.min.js"></script>
+</body>
+</html>

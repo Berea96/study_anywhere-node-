@@ -1,9 +1,12 @@
 <!DOCTYPE html>
 <html>
+
 <head>
-  <title><%= title %></title>
+  <title>
+    로비
+  </title>
   <link rel='stylesheet' href='/stylesheets/style.css' />
-  <script type="text/javascript" src="//code.jquery.com/jquery-1.12.4.js"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
   <script type="text/javascript" src="/socket.io/socket.io.js"></script>
 
   <!-- 합쳐지고 최소화된 최신 CSS -->
@@ -14,110 +17,289 @@
   <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/js/bootstrap.min.js"></script>
 
   <script type="text/javascript">
-  var userid = "<%=member_id%>";
-  var userrooms = [];
-
-  $(document).ready(function(){
-    // 방목록 출력
-    refresh();
-
+    var userid = "<%= mem_ID %>";
+    var usernames = [];
     var socket = io.connect();
-    //방생성시 목록 추가
-    socket.on('onCreateRoom', function (data){
 
-      $('<button></button>').attr({
-        'id': data.roomname,
-        'data-toggle': "modal",
-        'data-target': "#enterRoom"
-      }).text('방이름: '+ data.roomname +' 방장: '+ data.roomname).appendTo('#container');
-    });
 
-    //모달 연결
-    $('#container').on('click','button', function(){
-      var roomname = $(this).attr('id');
 
-      $(roomname2).val(roomname);
 
-    });
 
-    //방 생성
-    $('#createRoom').click(function(){
-      var roomName = $('#roomName').val();
-      var roomPass = $('#roomPass').val();
+//검색 기능
+    function search() {
+      var option = $('#searchOption').val();
+      var togourl = ""
+    if(option == 'roomname'){
+      togourl = "./lobby/searchRoom/rname";
 
-      if(roomPass == '' || roomName == ''){
-        alert('공백입력 불가!');
-        return;
-      }else {
+    }else if(option == 'userid'){
+      togourl = "./lobby/searchRoom/userid";
+    }
+      console.log($('#searchText').val());
+      if ($('#searchText').val() != '') {
+        $('#container').empty();
+        $('#paging').empty();
         $.ajax({
           type: 'GET',
-          url: "/lobby/existCheck",
-          data: { "roomname": roomName },
-          success: function(result){
-            var out = JSON.parse(result);
-            if(out.result == 'yes'){
-
-              var userroom = {
-                userid: userid,
-                roomname: roomName,
-                roompass: roomPass,
-              };
-
-              socket.emit('onCreateRoom', userroom);
-            }else{
-              alert('동일한 이름의 방이 있습니다!');
-              return;
-            }
+          url: togourl,
+          data: {
+            "searchText": $('#searchText').val()
+          },
+          success: function(data) {
+            $.each(data, function(index, item) {
+              $('<button></button>').attr({
+                'id': item.roomname,
+                'data-toggle': "modal",
+                'data-target': "#enterRoom"
+              }).text('방이름: ' + item.roomname + ' 방장: ' + item.userid).appendTo('#container');
+            })
           }
-        })
+        });
+      } else if ($('#searchText').val() == '') {
+        refresh(1);
       }
-
-    });
-
-    //새로고침 버튼
-    $('#refresh').click(function(){
-
-      $('#container').empty();
-
-      refresh();
-
-    });
-
-    //새로고침 메소드
-    function refresh(){
-      $.getJSON('/lobby/roomList', function(data){
-        userrooms = data;
-        socket.emit("user", "");
-        socket.on("user", (data) => {
-          userid = data;
-        });
-        $.each(data, function(index, item){
-          $('<button></button>').attr({
-            'id': item.roomname,
-            'data-toggle': "modal",
-            'data-target': "#enterRoom"
-          }).text('방이름: '+ item.roomname +' 방장: '+  userid).appendTo('#container');
-        });
-      });
     }
 
-    /*            function refresh(){
-    $.getJSON('/lobby/roomList/1', function(data){
-    userrooms = data.userrooms;
-    $.each(userrooms, function(index, item){
-    $('<button></button>').attr({
-    'id': item.roomname,
-    'data-toggle': "modal",
-    'data-target': "#enterRoom"
-  }).text('방이름: '+ item.roomname +' 방장: '+                     item.userid).appendTo('#container');
-});
-});
-}*/
+//============================================================================================
+//방 목록 출력 메소드
+    function refresh(j) {
 
-});
-//================================================================================
+      $('#container').empty();
+      $('#paging').empty();
 
-</script>
+      $.getJSON('/lobby/roomList/' + j, function(data) {
+        userrooms = data.userrooms;
+
+        var end = data.begin + data.size;
+        if (end > data.cnt) {
+          end = data.cnt
+        }
+        console.log(end);
+        console.log(data.begin);
+
+//방목록 출력
+        for (var i = data.begin; i < end; i++) {
+          console.log(i)
+          $('<button></button>').attr({
+            'id': userrooms[i].roomname,
+            'data-toggle': "modal",
+            'data-target': "#enterRoom"
+          }).text('방이름: ' + userrooms[i].roomname + ' 방장: ' + userrooms[i].userid).appendTo('#container');
+        }
+
+//============================================================================================
+//방목록 밑단 버튼 출력
+
+        if (j > 1) {
+          $('<a></a>').attr({
+            onclick: 'refresh(1)',
+            style: 'cursor: pointer'
+          }).text("1[◀◀]").appendTo('#paging');
+          $('<a></a>').attr({
+            onclick: 'refresh(' + (j - 1) + ')',
+            style: 'cursor: pointer'
+          }).text("[◀]").appendTo('#paging');
+        } else {
+          $('<span></span>').attr({
+            style: 'color: gray'
+          }).text("[◀◀]").appendTo('#paging');
+          $('<span></span>').attr({
+            style: 'color: gray'
+          }).text("[◀]").appendTo('#paging');
+        }
+
+        for (var i = data.startPage; i <= data.endPage; i++) {
+          if (i == j) {
+            $('<span></span>').text('<' + i + '>').appendTo('#paging');
+          } else {
+
+            $('<a></a>').attr({
+              onclick: 'refresh(' + i + ')',
+              style: 'cursor: pointer'
+
+            }).text('<' + i + '>').appendTo('#paging');
+          }
+        }
+
+
+        if (j < data.totalPage) {
+          $('<a></a>').attr({
+            onclick: 'refresh(' + (j + 1) + ')',
+            style: 'cursor: pointer'
+          }).text("[▶]").appendTo('#paging');
+          $('<a></a>').attr({
+            onclick: 'refresh(' + data.totalPage + ')',
+            style: 'cursor: pointer'
+          }).text("[▶▶]" + data.totalPage).appendTo('#paging');
+
+        } else {
+          $('<span></span>').attr({
+            style: 'color: gray'
+          }).text("[▶▶]").appendTo('#paging');
+          $('<span></span>').attr({
+            style: 'color: gray'
+          }).text("[▶]").appendTo('#paging');
+        }
+
+      });
+
+    }
+
+//============================================================================================
+
+    $(document).ready(function() {
+
+      if(userid == ''){
+        alert('로그인을 다시해주세요');
+        location.href="http://localhost/Study_Anywhere"
+      }
+
+
+      // 방목록 출력
+      refresh(1);
+
+      //방생성시 목록 추가
+      socket.on('onCreateRoom', function(data) {
+
+        $('<button></button>').attr({
+          'id': data.roomname,
+          'data-toggle': "modal",
+          'data-target': "#enterRoom"
+        }).text('방이름: ' + data.roomname + ' 방장: ' + data.userid).appendTo('#container');
+
+      });
+
+
+      //모달 연결
+      $('#container').on('click', 'button', function() {
+        var roomname = $(this).attr('id');
+
+        $(roomname2).val(roomname);
+
+      });
+
+      //방 생성
+      $('#createRoom').click(function() {
+        var roomName = $('#roomName').val();
+        var roomPass = $('#roomPass').val();
+        $('#roomPass').val('');
+
+        if (roomPass == '' || roomName == '') {
+          alert('공백입력 불가!');
+          return;
+        } else {
+          $.ajax({
+            type: 'GET',
+            url: "/lobby/existCheck",
+            data: {
+              "roomname": roomName
+            },
+            success: function(result) {
+              var out = JSON.parse(result);
+              if (out.result == 'yes') {
+
+                var userroom = {
+                  userid: userid,
+                  roomname: roomName,
+                  roompass: roomPass,
+                };
+
+                socket.emit('onCreateRoom', userroom);
+                $('#roomName').val('');
+
+              } else {
+
+                alert('동일한 이름의 방이 있습니다!');
+                return;
+
+              }
+            }//success
+          })//$.ajax
+        }//if
+
+      });
+
+      //새로고침 버튼
+      $('#refresh').click(function() {
+
+        $('#container').empty();
+        $('#paging').empty();
+
+        refresh(1);
+
+      });
+
+
+});//document ready
+
+
+function erase() {
+  $('#searchText').val('');
+  refresh(1);
+}
+
+//============================================================================================
+//채팅
+
+socket.on('connect', function(){
+
+  socket.emit('guestjoin', {
+    'roomname': 'lobby',
+    'username': userid,
+    'usernames': JSON.stringify(usernames)
+});
+});
+
+socket.on('disconnect', function(){
+  //delete usern
+})
+
+socket.on('servernoti', function (col, data) {
+  $('#conversation').append('<b><font color='+col+'>' + data + '</font></b><br>');
+  if ($('#scrolldiv').prop('scrollHeight') > $('#scrolldiv').height())
+    $('#scrolldiv').scrollTop($('#scrolldiv').prop('scrollHeight'));
+});
+
+socket.on('updateuser', function (usernames) {
+  $('#userlist').empty();
+  $.each(usernames, function (key, value) {
+    $('#userlist').append('<div>' + value + '</div>');
+  });
+});
+
+socket.on('recvmsg', function (username, data) {
+  console.log(username, data);
+  $('#conversation').append('<b>'+username + ':</b> ' + data + '<br>');
+  if ($('#scrolldiv').prop('scrollHeight') > $('#scrolldiv').height())
+    $('#scrolldiv').scrollTop($('#scrolldiv').prop('scrollHeight'));
+});
+
+$(function(){
+  $('#data').keypress(function(e) {
+    if(e.which == 13) {
+      $(this).blur();
+      $('#datasend').focus().click();
+      $('#data').focus();
+    }
+  });
+
+  $('#datasend').click( function() {
+    var message = $('#data').val();
+    $('#data').val('');
+
+    data={
+      'message': message,
+      'mem_ID': '<%= mem_ID %>'
+    }
+
+    socket.emit('sendmsg', data);
+  });
+});
+
+
+
+
+  </script>
 
 </head>
 
@@ -125,29 +307,70 @@
 
 <body>
 
-  <h1><%= title %></h1>
-  <p>Welcome to <%= title %></p>
+  <h1>
 
-  <p><%= member_id %></p>
-  <p><%= member_hash %></p>
+  </h1>
+  <p>Welcome to
 
-  <a href="http://localhost/Study_Anywhere/myPage.jsp">마이페이지</a>  <br />
+  </p>
+
+  <p>
+    <%= mem_ID %>
+  </p>
+  <p>
+
+  </p>
+
+  <a href="http://localhost/Study_Anywhere/myPage.jsp">마이페이지</a> <br />
+
+  <a href="/lobby/logout">로그아웃</a>
 
   <hr><br><br>
 
   <div>
-    <span>Room Name: </span>
-    <input id="roomName">
-    <span>Room Password: </span>
-    <input type="password" id="roomPass">
+    <div>
+      <span>Room Name: </span>
+      <input id="roomName">
+      <span>Room Password: </span>
+      <input type="password" id="roomPass">
 
-    <button id="createRoom">Create Room</button>
-    <button id="refresh">Refresh</button>
+      <button id="createRoom">Create Room</button>
+      <button id="refresh">Refresh</button>
+    </div>
+    <div>
+      <span>Search</span>
+      <input type="text" onkeyup="search()" id="searchText">
 
+      <select id="searchOption" name="searchOption" onchange="search()">
+        <option value="roomname" selected>방이름</option>
+        <option value="userid">방장</option>
+      </select>
+
+      <button onclick="erase()">X</button>
+
+      </select>
+    </div>
     <hr>
 
     <div id="container"></div>
+    <div id="paging"></div>
   </div>
+<br><br><br><hr>
+<!--================================================================================-->
+
+  <div id="box">
+  	<div id="scrolldiv" style="float:left;width:80%;height:250px; margin-top:20px; overflow: auto;border:2px solid gray;">
+  		<div id="conversation"></div>
+  	</div>
+  	<div style="float:left;width:20%;height:250px;border:2px solid gray;">
+  		<div id="userlist" style="width:100%;height:250px; margin:20px 20px 10px 10px; overflow: auto;"></div>
+  	</div>
+  	<div >
+  		<input id="data" style="width:80%; overflow:hidden;" />
+  		<input type="button" id="datasend" value="send" />
+  	</div>
+  </div>
+
 
   <!--================================================================================-->
   <div class="modal" id="enterRoom">
@@ -168,8 +391,7 @@
               <h5>
                 <label>비밀번호</label>
               </h5>
-              <input class="form-control" name="rpass" type="password"
-              id="pwd" />
+              <input class="form-control" name="rpass" type="password" id="pwd" />
             </div>
             <div class="modal-footer">
               <button class="btn btn-dark" type="submit">들어가기</button>
@@ -179,38 +401,7 @@
       </div>
     </div>
   </div>
-  <!--================================================================================-->
-  <!--        <div class="modal" id="createmodal">
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h4 class="modal-title">새로운 방을 개설합니다!</h4>
-          <button type="button" class="close" data-dismiss="modal">&times;</button>
-        </div>
-
-        <form action="/lobby/roomCheck" method="POST">
-          <div class="form-group">
-            <div class="modal-body">
-              <h5>
-                <label>방이름</label>
-              </h5>
-              <input class="form-control" name="rname" type="text" id="roomname2" />
-              <h5>
-                <label>비밀번호</label>
-              </h5>
-              <input class="form-control" name="rpass" type="password"
-              id="pwd" />
-            </div>
-            <div class="modal-footer">
-              <span id="existCheck" ></span>
-              <button class="btn btn-dark" >방만들기</button>
-            </div>
-          </div>
-        </form>
-      </div>
-    </div>
-  </div>-->
-  <!--================================================================================-->
 
 </body>
+
 </html>
