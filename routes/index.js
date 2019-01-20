@@ -19,7 +19,7 @@ var router = express.Router();
 router.post('/identify', function(req, res){
 	var javahash = (req.body.mem_Hash).toString();
 
-	var sess = req.session;
+	sess = req.session;
 	sess.mem_ID = req.body.mem_ID;
 	sess.mem_Hash = javahash;
 
@@ -50,6 +50,7 @@ router.post('/identify', function(req, res){
 
 router.get('/', function(req,res){
 	console.log('페이지 렌더링 전');
+	// console.log(req.session.mem_ID);
 	res.render('lobby.ejs' , {'mem_ID': req.session.mem_ID });
 	console.log('페이지 렌더링');
 	//res.redirect('./lobby/roomList/1');

@@ -136,7 +136,6 @@ socket.on('connect', function(){
     'username': '<%= mem_ID %>'
 });
 
-
 });
 
 console.log('<%= roomname %>')
@@ -149,6 +148,9 @@ console.log('<%= mem_ID %>')
 
     socket.on('updateuser', function (usernames) {
       $('#userlist').empty();
+      // $.each(usernames, function (key, value) {
+      //   $('#userlist').append('<div>' + value + '</div>');
+      // });
       $.each(usernames, function (key, value) {
         $('#userlist').append('<div>' + value + '</div>');
       });
@@ -222,9 +224,9 @@ console.log('<%= mem_ID %>')
       	<div style="float:left;width:20%;height:250px;border:2px solid gray;">
       		<div id="userlist" style="width:100%;height:250px; margin:20px 20px 10px 10px; overflow: auto;"></div>
       	</div>
-      	<div >
-      		<input id="data" style="width:80%; overflow:hidden;" />
-      		<input type="button" id="datasend" value="send" />
+      	<div>
+      		<input id="data" style="width:80%; overflow:hidden;">
+      		<input type="button" id="datasend" value="send">
       	</div>
       </div>
 

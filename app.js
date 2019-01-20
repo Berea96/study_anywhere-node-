@@ -43,14 +43,13 @@ app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(session({
 	key: 'sid',
-	 secret: 'study_anywhere',
-	 resave: false,
-	 saveUninitialized: true,
-	 cookie: {
-		    maxAge: 24000 * 60 * 60 // 쿠키 유효기간 24시간
-		  }
+	secret: 'study_anywhere',
+	resave: false,
+	saveUninitialized: true,
+	cookie: {
+		maxAge: 24000 * 60 * 60 // 쿠키 유효기간 24시간
+	}
 }));
-
 
 app.use('/', indexRouter);
 app.use('/lobby', lobbyRouter);
@@ -60,242 +59,301 @@ app.use('/room', roomRouter);
 //========================================================================================
 
 var usernames = [];
+var lobbyusers = {"room" : "lobby",
+"user" : []};
+// var roomusers = [];
 
 io.sockets.on('connect', function(socket){
 	var roomId = "";
 	var name = "";
 
-
-/*	var userroom = {
-			userid: string,
-			roomname: string,
-			roompass: string,
-			roommaxp: int,
-			roomcurp: int
+	/*	var userroom = {
+		userid: string,
+		roomname: string,
+		roompass: string,
+		roommaxp: int,
+		roomcurp: int
 	}*/
 
 	socket.on('guestjoin', function(data){
 		var username = data.username;
+		console.log("data.username" + username);
+
+		if(data.username != "" || name === "") {
+			name = data.username;
+		}
+		else {
+			console.log("error");
+		}
+
+		console.log("username " + name);
 
 		socket.username = username;
 		socket.room = data.roomname;
 		usernames[username] = username;
 		socket.join(data.roomname);
+		if(socket.room === "lobby") {
+			lobbyusers.user.push(username);
+			io.sockets.in(socket.room).emit('updateuser', lobbyusers.user);
+			socket.broadcast.to(data.roomname).emit('servernoti', 'green', username + ' has connected to ' + data.roomname);
+
+			console.log("lobby users : " + lobbyusers.user[0]);
+
+			console.log("lobby users length : " + lobbyusers.user.length);
+		}
+		else {
+			roomusers = {"room": data.roomname,
+			"user": []};
+			roomusers.user.push(username);
+			console.log("username : " + username);
+			io.sockets.in(socket.room).emit('updateuser', roomusers.user);
+			socket.broadcast.to(data.roomname).emit('servernoti', 'green', username + ' has connected to ' + data.roomname);
+
+			console.log(roomusers.room + " users : " + roomusers.user[0]);
+
+			console.log(roomusers.room + " users length : " + roomusers.user.length);
+		}
+		// usernames.push({"roomname" : "lobby",
+		// 						 	  "username" : username});
 		socket.emit('servernoti', 'green', 'you has connected Chat');
 
-		var userlist = new Array();
 
-		for (var name in usernames) {
-			userlist.push(usernames[name]);
-		}
+		var userlist = [];
 
-		io.sockets.in(socket.room).emit('updateuser', userlist);
+		// for (var name in usernames) {
+			// 	userlist.push(usernames[name]);
+			// }
 
-		socket.broadcast.to(data.roomname).emit('servernoti', 'green', username + ' has connected to ' + data.roomname);
-//		if (data.roomname!='lobby')
-//			socket.emit('updaterooms', rooms, roomname);
-	});
+			// io.sockets.in(socket.room).emit('updateuser', userlist);
+			// io.sockets.in(socket.room).emit('updateuser', lobbyusers.user);
+			// console.log(usernames.username);
+			// io.sockets.in(socket.room).emit('updateuser', usernames);
 
-	socket.on('join', function(data){
-		console.log('data at join : '+data);
-
-		if(name === "") {
-			name = sess.member_ID;
-		}
-		else
-			name = name;
-
-		db_room.getList(data, function(row){
-			userrooms = row;
-			var result = 0;
-
-			function wheretogo(){
-				for(var item in userrooms){
-					if(userrooms[item].roomname == data){
-						result+=1;
-					}
-				}
-			}
-
-			if(result != 1){
-
-				roomId = data;
-				//socket.leave(socket.room);
-				//socket.join(data);
-				socket.room = data;
-
-				io.sockets.in(roomId).emit('getImage', "");
-				socket.on('getImage', (data) => {
-					console.log('image save..........')
-					io.sockets.in(roomId).emit('setImage', data);
-				});
-
-				var destination = 'http://localhost:3000/room';
-				var redirect ={
-					"bool": true,
-					"method": "POST",
-					"destination": destination
-				}
-				socket.emit('redirect', redirect);
-
-			}else{
-
-				console.log('오류발생 ');
-
-				var destination = 'http://localhost:3000';
-				var redirect ={
-						"bool": false,
-						"method": "GET",
-						"destination": destination
-				}
-				socket.emit('redirect', redirect);
-			}
+			// socket.broadcast.to(data.roomname).emit('servernoti', 'green', username + ' has connected to ' + data.roomname);
+			//		if (data.roomname!='lobby')
+			//			socket.emit('updaterooms', rooms, roomname);
 		});
 
-	});
+		socket.on('join', function(data){
+			console.log('data at join : '+data);
 
-	socket.on('login', (data) => {
-		//console.log('Client logged-in: \n name: ' + sess.mem_ID + '\n userid: ' + data.userid);
+			// if(name === "") {
+				// 	name = sess.member_ID;
+				// }
+				// else
+				// 	name = name;
 
-		roomId = data.roomname;
+				db_room.getList(data, function(row){
+					userrooms = row;
+					var result = 0;
 
-		//socket.leave(socket.room);
-		socket.join(roomId);
-		socket.name = data.name;
-		name = socket.name;
-		user.push(socket.name);
-		socket.userid = data.userid;
-		socket.room = data;
+					function wheretogo(){
+						for(var item in userrooms){
+							if(userrooms[item].roomname == data){
+								result+=1;
+							}
+						}
+					}
 
-		console.log(roomId);
+					if(result != 1){
 
-		io.sockets.in(roomId).emit('getUser', socket.name);
-	});
+						roomId = data;
+						//socket.leave(socket.room);
+						//socket.join(data);
+						socket.room = data;
 
-	socket.on('joinUser', (data) => {
-		console.log(roomId + "방 현재 " + user.length + "명 접속 중");
-		io.sockets.in(roomId).emit('login', user);
-	});
+						io.sockets.in(roomId).emit('getImage', "");
+						socket.on('getImage', (data) => {
+							console.log('image save..........');
+							io.sockets.in(roomId).emit('setImage', data);
+						});
 
-	socket.on('getTime', (data) => {
-		var currentTime = new Date();
+						var destination = 'http://localhost:3000/room';
+						var redirect ={
+							"bool": true,
+							"method": "POST",
+							"destination": destination
+						}
+						socket.emit('redirect', redirect);
 
-		io.sockets.in(roomId).emit('setTime', "");
-	});
+					}else{
 
-	socket.on('chat', (data) => {
-		console.log('Message from %s: %s', socket.name, data.msg);
+						console.log('오류발생 ');
 
-		var msg = {
-			from: {
-				name: socket.name,
-				userid: socket.userid
-			},
-			msg: data.msg
-		};
-
-		io.sockets.in(roomId).emit('chat', msg);
-	});
-
-	socket.on('draw', function(data){
-		io.sockets.in(socket.room).emit('line', data);
-	});
-
-	socket.on('clearAll', (data) => {
-		io.sockets.in(socket.room).emit('clearAll', data);
-	});
-
-	socket.on('joinCanvas', function(data){
-		socket.join(data);
-		socket.room = data;
-	});
-
-
-	socket.on('onCreateRoom', function(data){
-		console.log('on server onCreateRoom')
-
-		var roomexist = false;
-/*		for(var item in userrooms){
-			if(data.roomname == userrooms[item].roomname){
-				roomexist = true;
-			}
-		}*/
-
-		db_room.existCheck(data.roomname, function(result){
-			roomexist = result;
-
-			if(!roomexist){
-				//socket.leave(socket.room);
-				//socket.join(data.roomname);
-				socket.room = data.roomname;
-				data.rcode = 0;
-
-				var room = {
-						userid: data.userid,
-						roomname: data.roomname,
-						roompass: data.roompass,
-					};
-
-				db_room.createRoom(room, function(row){
-					console.log(row);
+						var destination = 'http://localhost:3000';
+						var redirect ={
+							"bool": false,
+							"method": "GET",
+							"destination": destination
+						}
+						socket.emit('redirect', redirect);
+					}
 				});
 
-			}else{
-				data.rcode = 1;
-			}
+			});
 
-			if(data.rcode == 0){
-			socket.emit('onCreateRoom', data)
-			}else{
-				console.log('기존 방있음');
-			}
-		})
-	});
+			socket.on('login', (data) => {
+				//console.log('Client logged-in: \n name: ' + sess.mem_ID + '\n userid: ' + data.userid);
+
+				roomId = data.roomname;
+
+				//socket.leave(socket.room);
+				socket.join(roomId);
+				socket.name = data.name;
+				name = socket.name;
+				user.push(socket.name);
+				socket.userid = data.userid;
+				socket.room = data;
+
+				console.log(roomId);
+
+				io.sockets.in(roomId).emit('getUser', socket.name);
+			});
+
+			socket.on('joinUser', (data) => {
+				console.log(roomId + "방 현재 " + user.length + "명 접속 중");
+				io.sockets.in(roomId).emit('login', user);
+			});
+
+			socket.on('getTime', (data) => {
+				var currentTime = new Date();
+
+				io.sockets.in(roomId).emit('setTime', "");
+			});
+
+			socket.on('chat', (data) => {
+				console.log('Message from %s: %s', socket.name, data.msg);
+
+				var msg = {
+					from: {
+						name: socket.name,
+						userid: socket.userid
+					},
+					msg: data.msg
+				};
+
+				io.sockets.in(roomId).emit('chat', msg);
+			});
+
+			socket.on('draw', function(data){
+				io.sockets.in(socket.room).emit('line', data);
+			});
+
+			socket.on('clearAll', (data) => {
+				io.sockets.in(socket.room).emit('clearAll', data);
+			});
+
+			socket.on('joinCanvas', function(data){
+				socket.join(data);
+				socket.room = data;
+			});
+
+
+			socket.on('onCreateRoom', function(data){
+				console.log('on server onCreateRoom')
+
+				var roomexist = false;
+				/*		for(var item in userrooms){
+					if(data.roomname == userrooms[item].roomname){
+						roomexist = true;
+					}
+				}*/
+
+				db_room.existCheck(data.roomname, function(result){
+					roomexist = result;
+
+					if(!roomexist){
+						//socket.leave(socket.room);
+						//socket.join(data.roomname);
+						socket.room = data.roomname;
+						data.rcode = 0;
+
+						var room = {
+							userid: data.userid,
+							roomname: data.roomname,
+							roompass: data.roompass,
+						};
+
+						db_room.createRoom(room, function(row){
+							console.log(row);
+						});
+
+					}else{
+						data.rcode = 1;
+					}
+
+					if(data.rcode == 0){
+						socket.emit('onCreateRoom', data)
+					}else{
+						console.log('기존 방있음');
+					}
+				})
+			});
 
 
 
-	socket.on('sendmsg', function (data) {
-		console.log(data.message);
-		console.log(data.mem_ID);
-		io.sockets.in(socket.room).emit('recvmsg', data.mem_ID, data.message);
-	});
+			socket.on('sendmsg', function (data) {
+				console.log(data.message);
+				console.log(data.mem_ID);
+				io.sockets.in(socket.room).emit('recvmsg', data.mem_ID, data.message);
+			});
+
+			socket.on('forceDisconnect', () => {
+				socket.disconnect();
+			});
+
+			socket.on('disconnect', function(){
+				delete usernames[socket.username];
+				console.log("disconnected")
+				console.log("name : " + name);
+				for(var i = 0; i < lobbyusers.user.length; i++) {
+					if(lobbyusers.user[i] === name) {
+						lobbyusers.user.splice(i, 1);
+						// socket.leave(lobbyusers.room);
+						break;
+					}
+				}
+				// var userlist = new Array();
+				// for (var name in usernames) {
+					// 	userlist.push(usernames[name]);
+					// }
+					// io.sockets.emit('updateuser', userlist);
+					// io.sockets.emit('updateuser', lobbyusers.name);
+					if(socket.room === "lobby") {
+						if(typeof(socket.username) != 'undefined'){
+							// socket.broadcast.emit('servernoti', 'red', socket.username + ' has disconnected');
+							io.sockets.in(socket.room).emit('servernoti', 'red', socket.username + ' has disconnected');
+							socket.leave(socket.room);
+						}
+					}
+					else {
+						if(typeof(socket.username) != 'undefined'){
+							io.sockets.in(socket.room).emit('servernoti', 'red', socket.username + ' has disconnected');
+							socket.leave(socket.room);
+						}
+					}
+				});
+			})
+
+			//========================================================================================
+
+			// catch 404 and forward to error handler
+			app.use(function(req, res, next) {
+				next(createError(404));
+			});
+
+			// error handler
+			app.use(function(err, req, res, next) {
+				// set locals, only providing error in development
+				res.locals.message = err.message;
+				res.locals.error = req.app.get('env') === 'development' ? err : {};
+
+				// render the error page
+				res.status(err.status || 500);
+				res.render('error');
+			});
+
+			//========================================================================================
 
 
-
-	socket.on('disconnect', function(){
-		delete usernames[socket.username];
-		var userlist = new Array();			
-		for (var name in usernames) {
-			userlist.push(usernames[name]);
-		}
-		io.sockets.emit('updateuser', userlist);
-		if(typeof(socket.username) != 'undefined'){
-		socket.broadcast.emit('servernoti', 'red', socket.username + ' has disconnected');
-		}
-		socket.leave(socket.room);
-
-	});
-})
-
-//========================================================================================
-
-// catch 404 and forward to error handler
-app.use(function(req, res, next) {
-  next(createError(404));
-});
-
-// error handler
-app.use(function(err, req, res, next) {
-  // set locals, only providing error in development
-  res.locals.message = err.message;
-  res.locals.error = req.app.get('env') === 'development' ? err : {};
-
-  // render the error page
-  res.status(err.status || 500);
-  res.render('error');
-});
-
-//========================================================================================
-
-
-//module.exports = app;
+			//module.exports = app;
