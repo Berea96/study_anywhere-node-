@@ -1,33 +1,44 @@
 <!DOCTYPE html>
-<html>
-
+<html lang="en">
 <head>
-  <title>
-    로비
-  </title>
-  <link rel='stylesheet' href='/stylesheets/style.css' />
+  <title>Study Anywhere</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/css/bootstrap.min.css">
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/js/bootstrap.min.js"></script>
+  <style>
+    /* Add a gray background color and some padding to the footer */
+    footer {
+      background-color: #f2f2f2;
+      padding: 25px;
+    }
+
+    .carousel-inner img {
+      width: 100%; /* Set width to 100% */
+      min-height: 200px;
+    }
+
+    /* Hide the carousel text when the screen is less than 600 pixels wide */
+    @media (max-width: 600px) {
+      .carousel-caption {
+        display: none;
+      }
+    }
+  </style>
   <script type="text/javascript" src="/socket.io/socket.io.js"></script>
 
-  <!-- 합쳐지고 최소화된 최신 CSS -->
-  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/css/bootstrap.min.css">
-  <!-- 부가적인 테마 -->
-  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/css/bootstrap-theme.min.css">
-  <!-- 합쳐지고 최소화된 최신 자바스크립트 -->
-  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/js/bootstrap.min.js"></script>
-
   <script type="text/javascript">
-    var userid = "";
-    if(userid === "") {
-      userid = "<%= mem_ID %>";
-    }
-    else {
-      userid = userid;
-    }
+
+    //===================================
+    var url = 'localhost';
+    //===================================
+
+
+    var userid = "<%= mem_ID %>";
+    var roomname = "lobby";
     var usernames = [];
     var socket = io.connect();
-
-
 
 
 
@@ -53,11 +64,22 @@
           },
           success: function(data) {
             $.each(data, function(index, item) {
-              $('<button></button>').attr({
+
+
+
+
+              $('<div id="num'+index+'" class="col-sm-3"></div>').appendTo('#container');
+              $('<div class="well"></div>').attr({
                 'id': item.roomname,
+                'chief': item.userid,
                 'data-toggle': "modal",
-                'data-target': "#enterRoom"
-              }).text('방이름: ' + item.roomname + ' 방장: ' + item.userid).appendTo('#container');
+                'data-target': "#enterRoom",
+                'style': "cursor: pointer;"
+              }).appendTo('#num'+index+'');
+
+              $('<p></p>').text('방이름: ' + item.roomname).appendTo('#'+item.roomname+'');
+              $('<p></p>').text('방장: ' + item.userid).appendTo('#'+item.roomname+'');
+
             })
           }
         });
@@ -80,18 +102,22 @@
         if (end > data.cnt) {
           end = data.cnt
         }
-        console.log(end);
-        console.log(data.begin);
 
 //방목록 출력
         for (var i = data.begin; i < end; i++) {
-          console.log(i)
-          $('<button></button>').attr({
+          //console.log(i)
+          $('<div id="num'+i+'" class="col-sm-3"></div>').appendTo('#container');
+          $('<div class="well"></div>').attr({
             'id': userrooms[i].roomname,
+            'chief': userrooms[i].userid,
             'data-toggle': "modal",
-            'data-target': "#enterRoom"
-          }).text('방이름: ' + userrooms[i].roomname + ' 방장: ' + userrooms[i].userid).appendTo('#container');
-        }
+            'data-target': "#enterRoom",
+            'style': "cursor: pointer;"
+          }).appendTo('#num'+i+'');
+
+          $('<p></p>').text('방이름: ' + userrooms[i].roomname).appendTo('#'+userrooms[i].roomname+'');
+          $('<p></p>').text('방장: ' + userrooms[i].userid).appendTo('#'+userrooms[i].roomname+'');
+}
 
 //============================================================================================
 //방목록 밑단 버튼 출력
@@ -149,15 +175,30 @@
 
       });
 
-    }
+    }//refresh() end
 
 //============================================================================================
 
     $(document).ready(function() {
 
+  /*    function checkSpecial(str) {
+        var pattern_num = /[0-9]/;	// 숫자
+var pattern_eng = /[a-zA-Z]/;	// 문자
+var pattern_spc = /[~!@#$%^&*()_+|<>?:{}]/; // 특수문자
+var pattern_kor = /[ㄱ-ㅎ|ㅏ-ㅣ|가-힣]/; // 한글체크
+
+if( !(pattern_spc.test(str)) ){
+  return true
+}else{
+  alert("ggggggg")
+  return false
+}
+}*/
+
+
       if(userid == ''){
         alert('로그인을 다시해주세요');
-        location.href="http://localhost/Study_Anywhere"
+        location.href="http://"+url+"/Study_Anywhere/memberLogout.do"
       }
 
 
@@ -167,33 +208,71 @@
       //방생성시 목록 추가
       socket.on('onCreateRoom', function(data) {
 
-        $('<button></button>').attr({
+        $('<div id="'+data.roomname+'1" class="col-sm-3"></div>').appendTo('#container');
+        $('<div class="well"></div>').attr({
           'id': data.roomname,
+          'chief': data.userid,
           'data-toggle': "modal",
-          'data-target': "#enterRoom"
-        }).text('방이름: ' + data.roomname + ' 방장: ' + data.userid).appendTo('#container');
+          'data-target': "#enterRoom",
+          'style': "cursor: pointer;"
+        }).appendTo('#'+data.roomname+'1');
+
+        $('<p></p>').text('방이름: ' + data.roomname).appendTo('#'+data.roomname+'');
+        $('<p></p>').text('방장: ' + data.userid).appendTo('#'+data.roomname+'');
 
       });
 
 
       //모달 연결
-      $('#container').on('click', 'button', function() {
+      $('#container').on('click', 'div.well', function() {
         var roomname = $(this).attr('id');
+        var chief = $(this).attr('chief');
 
         $(roomname2).val(roomname);
+        $(chief2).val(chief);
 
       });
+
+
+      function regExp1(str){
+        var regExp = /[\{\}\[\]\/?.,;:|\)*~`!^\-_+<>@\#$%&\\\=\(\'\"]/gi
+       if(regExp.test(str)){
+            return false;
+        }else{
+            return true;
+        }
+      }
+
+      function regExp2(str){
+        var regExp = /\s/
+       if(regExp.test(str)){
+            return false;
+        }else{
+            return true;
+        }
+      }
+
 
       //방 생성
       $('#createRoom').click(function() {
         var roomName = $('#roomName').val();
         var roomPass = $('#roomPass').val();
+        var arr = [roomName, roomPass];
         $('#roomPass').val('');
 
+
+
+
         if (roomPass == '' || roomName == '') {
-          alert('공백입력 불가!');
+          alert('이름과 비밀번호를 입력해주세요.');
           return;
-        } else {
+        }else if(!regExp1(roomName) || !regExp1(roomPass)){
+          alert('특수문자는 입력이 불가합니다.')
+          return;
+        }else if(!regExp2(roomName) || !regExp2(roomPass)){
+          alert('공백을 입력하실 수 없습니다.')
+          return;
+        }  else {
           $.ajax({
             type: 'GET',
             url: "/lobby/existCheck",
@@ -248,19 +327,11 @@ function erase() {
 //채팅
 
 socket.on('connect', function(){
-
-  console.log(userid);
-
   socket.emit('guestjoin', {
     'roomname': 'lobby',
-    'username': userid,
-    'usernames': JSON.stringify(usernames)
+    'username': userid
 });
 });
-
-socket.on('disconnect', function(){
-  //delete usern
-})
 
 socket.on('servernoti', function (col, data) {
   $('#conversation').append('<b><font color='+col+'>' + data + '</font></b><br>');
@@ -269,10 +340,22 @@ socket.on('servernoti', function (col, data) {
 });
 
 socket.on('updateuser', function (usernames) {
-  $('#userlist').empty();
-  $.each(usernames, function (key, value) {
-    $('#userlist').append('<div>' + value + '</div>');
-  });
+  $.ajax({
+    type: 'POST',
+    url: "/lobby/getchatlist",
+    data: {
+      "roomname": roomname
+    },
+    success: function(list) {
+      $('#userlist').empty();
+      $.each(list, function (key, value) {
+        $('#userlist').append('<div>' + value + '</div>');
+      });
+
+    }//success
+  })//$.ajax
+
+
 });
 
 socket.on('recvmsg', function (username, data) {
@@ -310,106 +393,161 @@ $(function(){
   </script>
 
 </head>
-
-<!--================================================================================-->
-
 <body>
 
-  <h1>
+  <nav class="navbar navbar-inverse">
+    <div class="container-fluid">
+      <div class="navbar-header">
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#myNavbar">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="http://"+url+"/Study_Anywhere">Study Anywhere</a>
 
-  </h1>
-  <p>Welcome to
+      </div>
+      <div class="collapse navbar-collapse" id="myNavbar">
 
-  </p>
+  <!--       <ul class="nav navbar-nav">
+          <li class="active"><a href="#">Home</a></li>
+          <li><a href="#">About</a></li>
+          <li><a href="#">Gallery</a></li>
+          <li><a href="#">Contact</a></li>
+        </ul>
+   -->      <ul class="nav navbar-nav navbar-right">
 
-  <p>
-    <%= mem_ID %>
-  </p>
-  <p>
+<script>
 
-  </p>
+  function goMyPage (){
+    location.href='http://'+url+'/Study_Anywhere/myPage.jsp'
+  }
 
-  <a href="http://localhost/Study_Anywhere/myPage.jsp">마이페이지</a> <br />
+</script>
 
-  <a href="/lobby/logout">로그아웃</a>
+  		<li><a onclick="goMyPage()" style="cursor:pointer"><span class="glyphicon glyphicon-log-in"></span> My page</a></li>
+      <li><a href="/lobby/logout"><span class="glyphicon glyphicon-log-out"></span> Sign out</a>
 
-  <hr><br><br>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+<div class="container">
+
+  <p style="font-size: 30px;"><%= mem_ID %>님 환영합니다!</p>
+
+<div id="box">
+<div class="col-sm-8">
+  <div id="scrolldiv" style=" height:250px; margin:20px 0px 10px 0px; overflow: auto; border:2px solid gray;">
+
+    <div id="conversation"></div>
+
+  </div>
 
   <div>
-    <div>
-      <span>Room Name: </span>
-      <input id="roomName">
-      <span>Room Password: </span>
-      <input type="password" id="roomPass">
-
-      <button id="createRoom">Create Room</button>
-      <button id="refresh">Refresh</button>
-    </div>
-    <div>
-      <span>Search</span>
-      <input type="text" onkeyup="search()" id="searchText">
-
-      <select id="searchOption" name="searchOption" onchange="search()">
-        <option value="roomname" selected>방이름</option>
-        <option value="userid">방장</option>
-      </select>
-
-      <button onclick="erase()">X</button>
-
-      </select>
-    </div>
-    <hr>
-
-    <div id="container"></div>
-    <div id="paging"></div>
+    <input id="data" style="width:85%; overflow:hidden;" />
+    <input type="button" id="datasend" value="send" />
   </div>
-<br><br><br><hr>
-<!--================================================================================-->
+</div>
 
-  <div id="box">
-  	<div id="scrolldiv" style="float:left;width:80%;height:250px; margin-top:20px; overflow: auto;border:2px solid gray;">
-  		<div id="conversation"></div>
-  	</div>
-  	<div style="float:left;width:20%;height:250px;border:2px solid gray;">
-  		<div id="userlist" style="width:100%;height:250px; margin:20px 20px 10px 10px; overflow: auto;"></div>
-  	</div>
-  	<div >
-  		<input id="data" style="width:80%; overflow:hidden;" />
-  		<input type="button" id="datasend" value="send" />
-  	</div>
+  <!-- user list -->
+  <div class="col-sm-4">
+    <div class="well" style="height: 300px; margin: 10px;">
+      <p style="font-size: 20px;">채팅 유저</p>
+      <div id="userlist" style="width:100%;height:250px; margin:20px 20px 10px 10px; overflow: auto;"></div>
+    </div>
   </div>
 
+</div>
+<hr style="border: 1px solid gray">
+</div>
 
-  <!--================================================================================-->
-  <div class="modal" id="enterRoom">
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h4 class="modal-title">비밀번호를 입력해주세요</h4>
-          <button type="button" class="close" data-dismiss="modal">&times;</button>
-        </div>
+<div class="container text-center">
+  <h3>스터디룸은 언제나 열려있습니다!</h3>
+  <br>
+  <div class="row">
+    <div class="col-sm-6" style="border:1px solid gray; padding-bottom: 10px; ">
+      <h4>새로운 스터디룸을 만들어 보세요</h4>
+      <div >
+        <div>Room Name: <input id="roomName"></div>
 
-        <form action="/lobby/roomCheck" method="POST">
-          <div class="form-group">
-            <div class="modal-body">
-              <h5>
-                <label>방이름</label>
-              </h5>
-              <input class="form-control" name="rname" type="text" id="roomname2" readonly />
-              <h5>
-                <label>비밀번호</label>
-              </h5>
-              <input class="form-control" name="rpass" type="password" id="pwd" />
-            </div>
-            <div class="modal-footer">
-              <button class="btn btn-dark" type="submit">들어가기</button>
-            </div>
-          </div>
-        </form>
+
+        <div>Room Password: <input type="password" id="roomPass" ></div>
+
+        <br />
+
+        <button id="createRoom">스터디룸 개설!</button>
+        <button id="refresh">방목록 초기화</button>
+      </div>
+    </div>
+    <div class="col-sm-6" style="border:1px solid gray; padding-bottom: 10px; height: 150px;">
+      <br>
+      <h4>스터디룸을 검색해 보세요</h4><br>
+      <div>
+        <span>Search: </span>
+        <input type="text" onkeyup="search()" id="searchText">
+
+        <select id="searchOption" name="searchOption" onchange="search()">
+          <option value="roomname" selected>방이름</option>
+          <option value="userid">방장</option>
+        </select>
+
+        <button onclick="erase()">X</button>
+
+        </select>
       </div>
     </div>
   </div>
+  <hr >
+</div>
+
+<div class="container text-center" >
+
+  <div class="row" id="container"></div>
+  <div id="paging"></div>
+
+  <br>
+  <hr style="border: 1px solid gray">
+</div>
+
+
+<br>
+
+<footer class="container-fluid text-center">
+  <p>KITRI 디지털 컨버젼스 28기</p>
+</footer>
+
+
+<!--================================================================================-->
+<div class="modal" id="enterRoom">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h4 class="modal-title">비밀번호를 입력해주세요</h4>
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+      </div>
+
+      <form action="/lobby/roomCheck" method="POST">
+        <div class="form-group">
+          <div class="modal-body">
+            <h5>
+              <label>방이름</label>
+            </h5>
+            <input class="form-control" name="rname" type="text" id="roomname2" readonly />
+            <h5>
+              <label>비밀번호</label>
+            </h5>
+            <input class="form-control" name="rpass" type="password" id="pwd" />
+          </div>
+          <input type="hidden" name="chief" id="chief2">
+          <div class="modal-footer">
+            <button class="btn btn-dark" type="submit">들어가기</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
 
 </body>
-
 </html>

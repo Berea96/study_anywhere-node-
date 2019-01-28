@@ -10,11 +10,15 @@
 
 <script type="text/javascript">
 
+//===========================
+var url = 'localhost';
+//===========================
+
 $(document).ready(function(){
 	var mem_ID = '<%= mem_ID %>';
 	if(mem_ID == ''){
 		alert('로그인을 다시해주세요!');
-		location.href='http://localhost/Study_Anywhere';
+		location.href='http://'+url+'/Study_Anywhere/memberLogout.do';
 		return;
 	}
 })
@@ -26,16 +30,17 @@ socket.emit('join', '<%= roomname %>');
 
 socket.on('redirect', function(redirect) {
 	if(redirect.bool){
+		
 	    $('#goto').attr('action', redirect.destination);
 	    $('#goto').attr('method', redirect.method);
 	    $('#goto').submit();
 	}else{
-		alert('오류가 발생하여 로비로 돌아갑니다.');
+		alert('오류가 발생하여 로비로 돌아갑니다.');	
 		$('#goto').attr('action', redirect.destination);
 	    $('#goto').attr('method', redirect.method);
 	    $('#goto').submit();
 	}
-});
+}); 
 
 
 </script>
@@ -47,6 +52,7 @@ socket.on('redirect', function(redirect) {
 <form id="goto">
 	<input type="hidden" name="roomname" value="<%= roomname %>">
 	<input type="hidden" name="mem_ID" value="<%= mem_ID%>">
+	<input type="hidden" name="chief" value="<%= chief %>">
 </form>
 
 </body>

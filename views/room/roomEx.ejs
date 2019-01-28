@@ -1,105 +1,597 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+  <title>Study_Anywhere</title>
   <meta charset="utf-8">
-  <title><%=title%></title>
-  <!-- <script src="//code.jquery.com/jquery-1.12.0.min.js"></script> -->
-  <script src="//ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js"></script>
-  <script src="/socket.io/socket.io.js"></script>
-
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/css/bootstrap.min.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/js/bootstrap.min.js"></script>
   <style>
-  html {
-    width: 98%;
-    height: 98%;
-  }
-  body {
-    width: 98%;
-    height: 98%;
-  }
-  .head {
-    width: 100%;
-    height: 15%;
-    background-color: red;
-  }
-  .left {
-    float: left;
-    width: 20%;
-    height: 69%;
-    background-color: blue;
-  }
-  .menu div {
-    width: 100%;
-    height: 30px;
-    text-align: center;
-    background-color: white;
-    border: 1px solid;
+    /* Remove the navbar's default margin-bottom and rounded borders */
+    .navbar {
+      margin-bottom: 0;
+      border-radius: 0;
+    }
 
+    /* Set height of the grid so .sidenav can be 100% (adjust as needed) */
+    .row.content {height: 450px}
+
+    /* Set gray background color and 100% height */
+    .sidenav {
+      padding-top: 20px;
+      background-color: #f1f1f1;
+      height: 100%;
+    }
+
+    /* Set black background color, white text and some padding */
+    footer {
+      background-color: #555;
+      color: white;
+      padding: 15px;
+    }
+
+    /* On small screens, set height to 'auto' for sidenav and grid */
+    @media screen and (max-width: 767px) {
+      .sidenav {
+        height: auto;
+        padding: 15px;
+      }
+      .row.content {height:auto;}
+    }
+  </style>
+
+  <link rel='stylesheet' href='/fullcalendar/fullcalendar.css' />
+  <script src='/fullcalendar/lib/jquery.min.js'></script>
+  <script src='/fullcalendar/lib/moment.min.js'></script>
+  <script src='/fullcalendar/fullcalendar.js'></script>
+
+  <script src='/fullcalendar/lang/ko.js'></script>
+<script type="text/javascript">
+
+//=========================
+var url = 'localhost';
+//=========================
+
+var roomname = '<%= roomname %>';
+var username = '<%= mem_ID %>';
+var chief = '<%= chief %>';
+console.log(roomname);
+console.log(username);
+
+
+var events_array = [];
+
+$(document).ready(function(){
+  if(username == ''){
+    alert('로그인을 다시해주세요');
+    location.href="http://"+url+"/Study_Anywhere/memberLogout.do"
   }
-  .center {
-    float: left;
-    width: 60%;
-    height: 69%;
+})
+
+
+//getAll =================================
+$.ajax({
+    type: 'POST',
+    url: "http://"+url+"/Study_Anywhere/getAllEvent.do",
+    data:{
+    	"roomname": roomname
+    },
+    success: function(data) {
+		var list = JSON.parse(data);
+		//console.log(list);
+		for(var i = 0 ; i<list.length; i++){
+			var start = new Date(list[i].start);
+			var end = new Date(list[i].end);
+
+
+			var row = {
+					calnum: list[i].calnum+"",
+					username: list[i].username+"",
+					title: list[i].title+"",
+					start: moment(list[i].start),
+					end: moment(list[i].end)
+			};
+
+
+			if((list[i].username+"") == username ){
+				row.color = 'red';
+			}
+
+			if((end-start)%86400000 == 0){
+				row.allDay = true
+			}
+
+					events_array.push(row); // set default event
+
+		} //for end
+
+
+
+  // Create calendar when document is ready
+  $(document).ready(function() {
+
+
+
+
+
+    // We will refer to $calendar in future code
+    var $calendar = $("#calendar").fullCalendar({ //start of options
+
+      header: {
+        right: 'listWeek,today prev,next'
+      },
+
+        selectable: true,
+        eventLimit: true,
+        navLinks: true,
+        editable: true,
+
+        defaultView: 'listWeek',
+
+      //Drop =================================
+        eventDrop: function(event, delta, revertFunc) {
+
+
+        		if (event.username == username || chief == username) {
+
+        			if(confirm("정말 변경하시겠습니까?")){
+        				var data = {
+                      		  calnum: event.calnum,
+                                title: event.title,
+                                start: event.start,
+                                end: event.end
+                              };
+                      console.log(data);
+                      $.ajax({
+                          type: 'GET',
+                          url: "http://"+url+"/Study_Anywhere/modifyEvent.do",
+                          data: {
+                            "event": JSON.stringify(data),
+                          },
+                          success: function(data) {
+            					console.log(data);
+                              // Call the "updateEvent" method
+                              $calendar.fullCalendar("updateEvent", event);
+
+                              return;
+                          }
+                        });
+        			}else{
+            			  return;
+                      }
+
+
+        	    }else{
+
+        			  alert("본인의 이벤트만 변경할 수 있습니다.")
+        			  return;
+
+        	    }
+
+
+        },
+
+        eventResize: function(event, delta, revertFunc) {
+
+
+    		if (event.username == username || chief == username) {
+
+    			if(confirm("정말 변경하시겠습니까?")){
+    				var data = {
+                  		  calnum: event.calnum,
+                            title: event.title,
+                            start: event.start,
+                            end: event.end
+                          };
+                  console.log(data);
+                  $.ajax({
+                      type: 'GET',
+                      url: "http://"+url+"/Study_Anywhere/modifyEvent.do",
+                      data: {
+                        "event": JSON.stringify(data),
+                      },
+                      success: function(data) {
+        					console.log(data);
+                          // Call the "updateEvent" method
+                          $calendar.fullCalendar("updateEvent", event);
+
+                          return;
+                      }
+                    });
+    			}else{
+        			  return;
+                  }
+
+
+    	    }else{
+
+    			  alert("본인의 이벤트만 변경할 수 있습니다.")
+    			  return;
+
+    	    }
+
+        },
+        //This is the callback that will be triggered when a selection is made
+        /*select: function(start, end, jsEvent, view) {
+          alert(start.format("MM/DD/YYYY hh:mm a") + " to " + end.format("MM/DD/YYYY h\
+          h:mm a") + " in view " + view.name);
+        },*/
+
+
+        eventRender: function(event, element, view) {
+              	if (view.name == 'listDay') {
+              		element.find(".fc-list-item-time").append("<span class='closeon'>X</span>");
+              	} else {
+              		element.find(".fc-content").prepend("<span class='closeon'>X</span>");
+              	}
+             		element.find(".closeon").on('click', function(e) {
+
+
+                		if (event.username == username || chief == username) {
+
+                			if(confirm("정말 삭제하시겠습니까?")){
+
+                				var data = {
+                                		calnum: event.calnum,
+                                        title: event.title,
+                                        start: event.start,
+                                        end: event.end
+                                      };
+
+                                $.ajax({
+                                    type: 'POST',
+                                    url: "http://"+url+"/Study_Anywhere/removeEvent.do",
+                                    data: {
+                                      "event": JSON.stringify(data),
+                                    },
+                                    success: function(data) {
+                                  	  console.log(data);
+                                  	$('#calendar').fullCalendar('removeEvents',event._id);
+
+                                    }
+                                  });
+                              	e.stopPropagation();
+                              	return;
+
+                			}else{
+                				e.stopPropagation();
+                      		  	return;
+                              }
+
+
+                	    }else{
+
+                	    	e.stopPropagation();
+                  		  	alert("본인의 이벤트만 삭제하실 수 있습니다.")
+                  		  	return;
+
+                	    }
+
+
+              		});
+              },
+
+
+        select: function(start, end, jsEvent, view) {
+
+          // Ask for a title. If empty it will default to "New event"
+          var title = prompt("Enter a title for this event", "New event");
+          // If did not pressed Cancel button
+          if (title != null) {
+            // Create event
+            var data = {
+              'title': title.trim() != "" ? title : "New event",
+              'start': start,
+              'end': end,
+              'roomname': roomname,
+              'username': username
+
+            };
+
+            $.ajax({
+              type: 'POST',
+              url: "http://"+url+"/Study_Anywhere/addEvent.do",
+              data: {
+                "event": JSON.stringify(data),
+              },
+              success: function(data) {
+            	  console.log(data);
+                  var event = {
+                		  'calnum': data,
+                          'title': title.trim() != "" ? title : "New event",
+                          'start': start,
+                          'end': end,
+                          'username': username,
+                          'color': 'red'
+                        };
+                  console.log(event);
+                $calendar.fullCalendar("renderEvent", event, true);
+              }
+            });
+
+
+            // Push event into fullCalendar's array of events
+            // and displays it. The last argument is the
+            // "stick" value. If set to true the event
+            // will "stick" even after you move to other
+            // year, month, day or week.
+
+          };
+          // Whatever happens, unselect selection
+          $calendar.fullCalendar("unselect");
+        }, // End select callback
+
+        // Callback triggered when we click on an event
+        eventClick: function(event, jsEvent, view) {
+
+
+    		if (event.username == username || chief == username) {
+
+
+    			// Ask for a title. If empty it will default to "New event"
+    	          var newTitle = prompt("변경할 제목을 입력해 주세요", event.title);
+
+    	          // If did not pressed Cancel button
+    	          if (newTitle != null) {
+    	            // Update event
+    	            event.title = newTitle.trim() != "" ? newTitle : event.title;
+
+    	              var data = {
+    	            		  calnum: event.calnum,
+    	                      title: event.title,
+    	                      start: event.start,
+    	                      end: event.end
+    	                    };
+
+    	            $.ajax({
+    	                type: 'GET',
+    	                url: "http://"+url+"/Study_Anywhere/modifyEvent.do",
+    	                data: {
+    	                  "event": JSON.stringify(data),
+    	                },
+    	                success: function(data) {
+    						console.log(data);
+    	                    // Call the "updateEvent" method
+    	                    $calendar.fullCalendar("updateEvent", event);
+    	                }
+    	              });
+    	          }else{
+        			  return;
+    	          }
+
+    	    }else{
+    			  alert("본인의 이벤트만 변경할 수 있습니다.");
+    			  return;
+
+
+    	    }
+
+
+        }, // End callback eventClick
+        events: events_array
+      } //End of options
+    );
+  });//$ready
+
+	console.log(events_array);
+    }
+
+  });//ajax end
+
+
+</script>
+
+
+
+</head>
+<body>
+
+  <nav class="navbar navbar-inverse">
+    <div class="container-fluid">
+      <div class="navbar-header">
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#myNavbar">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="http://"+url+"/Study_Anywhere">Study Anywhere</a>
+
+      </div>
+      <div class="collapse navbar-collapse" id="myNavbar">
+
+  <!--       <ul class="nav navbar-nav">
+          <li class="active"><a href="#">Home</a></li>
+          <li><a href="#">About</a></li>
+          <li><a href="#">Gallery</a></li>
+          <li><a href="#">Contact</a></li>
+        </ul>
+   -->      <ul class="nav navbar-nav navbar-right">
+
+   <script>
+
+     function goMyPage (){
+       location.href='http://'+url+'/Study_Anywhere/myPage.jsp'
+     }
+
+   </script>
+
+  		<li><a onclick="goMyPage()" style="cursor:pointer"><span class="glyphicon glyphicon-log-in"></span> My page</a></li>
+      <li><a href="/lobby/logout"><span class="glyphicon glyphicon-log-out"></span> Sign out</a>
+
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+<script type="text/javascript">
+
+  function calen(){
+    window.open('http://'+url+'/Study_Anywhere/showCalendar.do', 'calendar', 'width=700, height=550, top=0, left=0');
   }
-  #chatLogs {
-    border: 1px solid;
-    top: 150px;
-    height: 150px;
-    width:100%;
-    overflow-y: scroll;
-    word-wrap: break-word;
-    word-break: break-all;
-    background-color: #cadff2;
+
+  function timer(){
+    window.open("http://"+url+":3000/room/timer", "timer", "width=335, height=150, top=605, left=-10");
+  };
+
+  function canvas(){
+    window.open("http://"+url+":3000/room/canvas?roomname="+roomname, "canvas", "width=720, height=415");
   }
-  .form-inline {
-    width: 100%;
+
+  function bbs(rname){
+    window.open('http://'+url+'/Study_Anywhere/boardList.do?page=1', 'calendar', 'width=700, height=750, top=0, left=0');
   }
-  .right {
-    float: left;
-    width: 20%;
-    height: 69%;
-    background-color: yellow;
+
+  function search(){
+    var key = $('#search').val();
+    window.open("https://search.naver.com/search.naver?query="+key);
   }
-  #join {
-    position: relative;
-    border: 1px solid;
-    overflow-y: scroll;
-    word-wrap: break-word;
-    word-break: break-all;
-    width: 99%;
-    height: 99%;
-    background-color: white;
+
+$(function(){
+  $('#search').keypress(function(e) {
+    if(e.which == 13) {
+      $(this).blur();
+      var key = $('#search').val();
+      window.open("https://search.naver.com/search.naver?query="+key);
+      $('#search').val('');
+    }
+  });
+});
+</script>
+
+
+<div class="container-fluid text-center">
+  <div class="row content">
+    <div class="col-sm-2 sidenav">
+      <ul class="nav nav-pills nav-stacked">
+        <li class="active" style="cursor: pointer;"><a onClick="calen()">캘린더</a></li>
+        <li class="active" style="cursor: pointer;"><a onClick="timer()">타이머</a></li>
+        <li class="active" style="cursor: pointer;"><a onClick="canvas()">캔버스</a></li>
+        <li class="active" style="cursor: pointer;"><a onClick="bbs()">게시판</a></li>
+      </ul>
+    </div>
+    <div class="col-sm-7 text-left">
+
+      <div class="row" style="text-align: center">
+        <h1 style=" text-align: center;"><%= roomname %></h1>
+        <h3 style=" text-align: center;">에 오신것을 환영합니다!</h3>
+        <hr style="border: 1px solid gray">
+        <br>
+
+        <div class="">
+        <p style="display: inline-block; width:500px; height:50px; line-height:0px; color:#666;font-size:30px; text-align:center;" id="day"></p>
+        <p style="display: inline-block; width:500px; height:50px; line-height:0px; color:#666;font-size:80px; text-align:center;" id="clock"></p>
+        </div>
+
+         <input type="text" id="search" style="width: 300px;">&nbsp;&nbsp;<span class="glyphicon glyphicon-search" style="cursor:pointer" onclick="search()"></span>
+
+      </div>
+      <br>
+      <hr style="border: 1px solid gray">
+      <!--================================================================================-->
+
+      <div class="row">
+        <div style="margin: 20px;">
+
+            <div id="box">
+              <div style="row">
+
+
+              <div id="scrolldiv" style="float:left;width:80%;height:250px; overflow: auto;border:2px solid gray;">
+                <div id="conversation"></div>
+              </div>
+              <div style="float:left;width:20%;height:250px;border:2px solid gray;">
+                <div id="userlist" style="width:100%;height:250px; margin:20px 20px 10px 10px; overflow: auto;"></div>
+              </div>
+              <div >
+                <input id="data" style="width:80%; overflow:hidden;" />
+                <input type="button" id="datasend" value="send" />
+              </div>
+
+              </div>
+            </div>
+
+        </div>
+      </div>
+      <!--================================================================================-->
+    </div>
+    <div class="col-sm-3 sidenav">
+
+      <div id="calendar"></div>
+      <br><br><br>
+      <div>
+        <button class="btn btn-danger" onClick="location.href='/'">
+          로비로 돌아가기!
+        </button>
+      </div>
+
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<footer class="container-fluid text-center">
+  <p>KITRI 디지털 컨버젼스 28기</p>
+</footer>
+
+<script type="text/javascript">
+
+
+$(document).ready(function(){
+
+
+function clock1 (){
+  $.ajax({
+  type: 'get',
+  url: './room/clock',
+  success: function(date){
+  var d = new Date(date);
+  var hi = d.getHours();
+  var mi = d.getMinutes();
+  var si = d.getSeconds();
+
+  var h;
+  var m;
+  var s;
+if(hi<10){
+  h = '0';
+  h += hi;
+}else{
+  h =hi;
+}
+if(mi<10){
+  m = '0';
+  m += mi;
+}else{
+  m = mi;
+}
+if(si<10){
+  s = '0';
+  s += si;
+}else{
+  s = si;
+}
+
+  var y = d.getFullYear();
+  var mm = d.getMonth()+1;
+  var dd = d.getDate();
+  $('#day').text( y +"년"+ mm +"월"+ dd +"일");
+  $('#clock').text("\n"+ h +":"+ m +":"+ s );
   }
-  .currentTime {
-    text-align: center;
-  }
-  #chatLogs {
-    position: relative;
-  }
-  #input-group {
-    position: relative;
-    top: 150px;
-    width: 400px;
-  }
-  #msgForm {
-    margin-left: 3px;
-    width: 70%;
-  }
-  #send {
-    width: 50px;
-  }
-  #bottom {
-    width: 30px;
-  }
-  .footer {
-    clear: both;
-    width: 100%;
-    height: 15%;
-    background-color: orange;
-  }
-</style>
+});
+}
+setInterval(clock1, 1000);
+
+})//ready
+</script>
+
+<script src="/socket.io/socket.io.js"></script>
 <script type="text/javascript">
   var socket = io.connect();
   var usernames = [];
+  var roomname = '<%= roomname %>';
+  var username = '<%= mem_ID %>';
 
   $(document).ready(() => {
 
@@ -107,9 +599,9 @@
       var form = document.form1;
       window.open("", "canvas", "width=720, height=415");
 
-      form.action = "http://localhost:3000/room/canvas";
+      form.action = "http://"+url+":3000/room/canvas";
       form.target = "canvas";
-      form.roomname.value = '<%= roomname %>';
+      form.roomname.value = roomname;
       form.submit();
     });
 
@@ -118,11 +610,7 @@
     });
 
     $("#timer").click(() => {
-      window.open("http://localhost:3000/room/timer", "timer", "width=335, height=150, top=605, left=-10");
-    });
-
-    $("#calendar").click(() => {
-      alert("달력 준비중");
+      window.open("http://"+url+":3000/room/timer", "timer", "width=335, height=150, top=605, left=-10");
     });
 
 
@@ -133,13 +621,11 @@
 socket.on('connect', function(){
   socket.emit('guestjoin', {
     'roomname': '<%= roomname %>',
-    'username': '<%= mem_ID %>'
+    'username': '<%= mem_ID %>',
+    'chief': '<%= chief %>'
+});
 });
 
-});
-
-console.log('<%= roomname %>')
-console.log('<%= mem_ID %>')
     socket.on('servernoti', function (col, data) {
       $('#conversation').append('<b><font color='+col+'>' + data + '</font></b><br>');
       if ($('#scrolldiv').prop('scrollHeight') > $('#scrolldiv').height())
@@ -147,21 +633,28 @@ console.log('<%= mem_ID %>')
     });
 
     socket.on('updateuser', function (usernames) {
-      $('#userlist').empty();
-      // $.each(usernames, function (key, value) {
-      //   $('#userlist').append('<div>' + value + '</div>');
-      // });
-      $.each(usernames, function (key, value) {
-        $('#userlist').append('<div>' + value + '</div>');
-      });
+      $.ajax({
+        type: 'POST',
+        url: "/lobby/getchatlist",
+        data: {
+          "roomname": roomname
+        },
+        success: function(list) {
+          $('#userlist').empty();
+          $.each(list, function (key, value) {
+            $('#userlist').append('<div>' + value + '</div>');
+          });
+
+        }//success
     });
+  });
 
     socket.on('recvmsg', function (username, data) {
       console.log(username, data);
       $('#conversation').append('<b>'+username + ':</b> ' + data + '<br>');
       if ($('#scrolldiv').prop('scrollHeight') > $('#scrolldiv').height())
         $('#scrolldiv').scrollTop($('#scrolldiv').prop('scrollHeight'));
-    });
+    }); //recvmsg
 
     $(function(){
       $('#data').keypress(function(e) {
@@ -186,59 +679,6 @@ console.log('<%= mem_ID %>')
     });
 
   </script>
-</head>
-<body>
-  <div class="head"><%=roomname%></div>
-  <div class="left">
-    왼손
-    <div class="menu" id="menu">
-      <form class="form1" name="form1" method="post">
-        <div class="divs" id="canvas">그림판</div>
-        <div class="divs" id="board">게시판</div>
-        <div class="divs" id="timer">타이머</div>
-        <div class="divs" id="calendar">달력</div>
-        <input type="hidden" name="roomname">
-      </form>
-      <a href="http://localhost:3000/">로비로 돌아가자</a>
-    </div>
-  </div>
-  <div class="center">
-    <div class="currentTime">
-      Welcome
-    </div>
-    <!-- <div id="chatLogs">
-    </div>
-    <div id="input-group" class="form-group">
-      <form class="form-inline" action="">
-        <input type="text" class="form_control" id="msgForm" autocomplete="off">
-        <button type="submit" id="send" class="btn btn-primary">Send</button>
-        <input type="button" id="bottom" name="button" value="↓">
-      </form>
-    </div> -->
-    <!--================================================================================-->
 
-      <div id="box">
-      	<div id="scrolldiv" style="float:left;width:80%;height:250px; margin-top:20px; overflow: auto;border:2px solid gray;">
-      		<div id="conversation"></div>
-      	</div>
-      	<div style="float:left;width:20%;height:250px;border:2px solid gray;">
-      		<div id="userlist" style="width:100%;height:250px; margin:20px 20px 10px 10px; overflow: auto;"></div>
-      	</div>
-      	<div>
-      		<input id="data" style="width:80%; overflow:hidden;">
-      		<input type="button" id="datasend" value="send">
-      	</div>
-      </div>
-
-
-      <!--================================================================================-->
-  </div>
-  <div class="right">
-
-    <div id="join"></div>
-  </div>
-  <div class="footer">
-    다리~
-  </div>
 </body>
 </html>
